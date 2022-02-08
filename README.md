@@ -2,4 +2,4 @@
 ### 1. 기본 이론
 
 ### 2. 응용
-[1) ConcatAdapter](https://github.com/justbydev/Android/blob/main/응용/ConcatAdapter.md)
+[1) ConcatAdapter](https://github.com/justbydev/Android/blob/main/Application/ConcatAdapter.md)
