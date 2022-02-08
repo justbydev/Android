@@ -118,3 +118,11 @@ class WordContentAdapter: RecyclerView.Adapter<WordContentViewHolder>() {
     override fun getItemCount(): Int = wordlist.size
 }
 ```
+## 5. binding.inflate & View.inflate 통한 View 생성
+#### 1) binding.inflate
+```javascript
+val view: View = Binding.flate(LayoutInflater, ViewGroup, Attached)
+```
+#### 2) View.inflate
+```javascript
+val view: View = LayoutInflater.inflate(R.layout.id, ViewGroup, Attached)
