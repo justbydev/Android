@@ -155,6 +155,9 @@ class Fragment1 : Fragment(R.layout.fragment_1) {
   - detach : 뷰 계층에서만 제거
 - show/hide
   - Fragment 상태와 상관 없이 visibility를 관리
+- detach vs hide
+  - detach는 instance를 남기기 하지만 뷰 계층을 없애기 때문에 이전 history가 전부 날라감
+  - hide는 단지 invisible하게 만들기만 할 뿐 history가 날라가지 않음
 #### 3) commit()
 - Transaction을 실행하면 반드시 commit()을 해야 함
   - fragment-ktx에서도 transaction을 생략했지만 suppotFragmentManager.commit{} 으로 코드 작성
@@ -172,6 +175,7 @@ class Fragment1 : Fragment(R.layout.fragment_1) {
 - popBackStack() : back stack에서 Fragment transaction pop
 - popBackStack("name", 0) : "name" 제외하고 "name" transaction 나오기 전까지 pop
 - popBackStack("name", POP_BACK_STACK_INCLUSIVE) : "name" 포함 "name" transaction 나올때까지 pop
+- popBackStack(getBackStackEntryAt(0).id, POP_BACK_STACK_INCLUSIVE) : Back stack을 전부 clear
 - androidx 에서는 back key 처리가 onBackPressedDispatcher로 위임
 - pop을 하면 push transaction 반대로
   - add <-> remove
