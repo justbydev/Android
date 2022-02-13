@@ -209,13 +209,17 @@ class PurchaseConfirmationDialogFragment : DialogFragment(R.layout.purchase_conf
 }
 ```
 ## 6. 참고 자료
-[Fragment Animation](https://developer.android.com/guide/fragments/animate)
-[Fragment Lifecycle](https://developer.android.com/guide/fragments/lifecycle)
-[Saving state](https://developer.android.com/guide/fragments/saving-state)
-[Communicate with fragment](https://developer.android.com/guide/fragments/communicate)
-[DialogFragment](https://developer.android.com/guide/fragments/dialogs)
+[Fragment Animation](https://developer.android.com/guide/fragments/animate)<br>
+[Fragment Lifecycle](https://developer.android.com/guide/fragments/lifecycle)<br>
+[Saving state](https://developer.android.com/guide/fragments/saving-state)<br>
+[Communicate with fragment](https://developer.android.com/guide/fragments/communicate)<br>
+[DialogFragment](https://developer.android.com/guide/fragments/dialogs)<br>
 [Shared element transitions](https://medium.com/@bherbst/fragment-transitions-with-shared-elements-7c7d71d31cbb)
 
+## 7. Additional Study Needed
+- Fragment Animation
+- Shared element transitions
+- Viewmodel
 
 
 
