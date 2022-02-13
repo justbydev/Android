@@ -89,8 +89,79 @@ class FragmentB : Fragment(R.layout.fragment_B) {
   - 이런 LifecycleOwner를 직접 사용하기 보다 Fragment Callbacks를 제공하여 다룰 수 있도록 한 것
 <img width="320" alt="스크린샷 2022-02-13 오전 10 53 49" src="https://user-images.githubusercontent.com/17876424/153734954-296f993d-a821-42fe-bfd9-1dbb3ebfdfb2.png">
 
+## 3. Saving state
+#### 1) 상태 유형
+- Variable
+  - Fragment의 local variable
+  - Fragment가 파괴되면 다 초기화
+- View state
+  - View가 보유하 데이터
+  - View는 내부적으로 onSaveInstanceState(), onRestoreInstanceState()가 구현되어 있어 자동으로 유지됨
+  - 단, ID를 반드시 설정해야 함
+- savedState
+  - onSaveInstanceState()로 저장한 데이터
+  - Bundle로 전단되는 인자를 통해서 복구
+- NonConfig
+  - configuration과 무관한 사용자 생성 데이터(서버 결과값, DB값 등)
+<img width="670" alt="스크린샷 2022-02-13 오전 11 32 57" src="https://user-images.githubusercontent.com/17876424/153735785-81dbf7a2-0ae1-4ca6-8957-b4cdb35d6767.png">
 
+## 4. Communicate with fragment
+#### 1) 기본
+- 기본적으로 Fragment의 통신은 Activity의 FragmentManager를 통해 이루어짐
+- 하지만 Activity를 통해 통신을 하게 되면 의존성이 높아져 문제가 생길 수 있음
+  - Viewmodel을 사용하도록 반강제성을 부여
+#### 2) Viewmodel
+- configuration 변경과 상관없이 데이터 유지
+- viewmodelStoreOwner가 Viewmodel을 저장하는데 owner가 같으면 같은 viewmodel을 돌려준다
+  - 이런 이유로 data 공유 가능
+#### 3) communicate between Activity and Fragment using Viewmodel
+- Activity와 Fragment간의 통신
+  - Activity에서 Viewmodel을 생성
+  - Fragment에서 동일 Viewmodel을 공유
+```javascript
+private val viewModel : ShareViewModel by viewModels()
+```
+```javascript
+private val viewModel : ShareViewModel by activityViewModels()
+```
+#### 4) communicate between Fragments using Viewmodel
+- Fragment끼리의 통신
+  - 역시 Activity에서 생성한 Viewmodel을 공유하여 통신
+  - activityViewModels()을 통신할 Fragment에서 작성하여 통신
+#### 5) communicate between parent and child fragments using Viewmodel
+- requireParentFragment() 사용
+```javascript
+class ParentFragment: Fragment() {
+  private val viewModel : ShareViewModel by viewModels()
+}
+```
+```javscript
+class ChildFragment: Fragment() {
+  private val viewModel : ShareViewModel by viewModels({requireParentFragment()})
+}
+```
+#### 6) communicate between Fragments using Result API
+- FragmentManager를 통해서 통신하는 방법
+- 데이터를 받는 쪽에서는 setFragmentResultListener() 설정(onCreate()에서 설정)
+- 데이터 보내는 쪽에서는 setFragmentResult() 작성
+- requiestkey와 데이터 담을 bundle 작성
+```javascript
+class Dataget_Fragment : Fragment(R.layout.fragment_Data_get) {
+    var binding: Fragment1Binding?= null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val inflater = TransitionInflater.from(requireContext())
+        setFragmentResultListener("requestkey") { requestKey, bundle ->  
 
+        }
+    }
+}
+```
+```javascript
+class Datasend_Fragment : Fragment(R.layout.fragment_Data_send) {
+  ...
+  setFragmentResult("requestkey", bundleOf(...))
+}
 
 
 
