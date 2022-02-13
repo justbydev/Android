@@ -1,4 +1,4 @@
-# Fragment1(androidx.fragment:fragment-ktx version)
+# Fragment2(androidx.fragment:fragment-ktx version)
 ## 1. Animate transitions between Fragments
 #### 1) Animation
 - res/anim resource file 사용
