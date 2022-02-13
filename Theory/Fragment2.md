@@ -162,6 +162,62 @@ class Datasend_Fragment : Fragment(R.layout.fragment_Data_send) {
   ...
   setFragmentResult("requestkey", bundleOf(...))
 }
+```
+## 5. DialogFragment
+#### 1) 정의
+- Dialog를 create & host 하기 위해 설계된 Fragment의 subclass
+- Fragment 안에 따로 dialog를 만들 필요 없이 FragmentManager가 관리
+#### 2) onCreateDialog()
+```javascript
+class PurchaseConfirmationDialogFragment : DialogFragment() {
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
+            AlertDialog.Builder(requireContext())
+                .setMessage(getString(R.string.order_confirmation))
+                .setPositiveButton(getString(R.string.ok)) { _,_ -> }
+                .create()
+
+    companion object {
+        const val TAG = "PurchaseConfirmationDialog"
+    }
+}
+```
+```javascript
+val dialog = PurchaseConfirmationDialogFragment()
+dialog.show(childFragmentManager, PurchaseConfirmationDialog.TAG)
+dialog.dismiss()
+dialog.hide()
+```
+- dialog start할 때는 dialog.show()
+- dialog stop할 때는 dialog.hide()
+- dialog detroy할 때는 dialog.dismiss()
+- show, hide, dismiss 등 내부적으로 FragmentTransaction()이 구현되어 있음
+
+#### 3) using custom views
+- onCreateDailog() 방법은 기존 AlertDialog() 사용하는 방식대로 하는 것
+- 원하는 View를 inflate하여 생성 가능
+- 일반 Fragment와 마찬가지로 onCreateView(), onViewCreated()를 사용
+  - onCreateDialog() 사용안해도 된다
+```javascript
+class PurchaseConfirmationDialogFragment : DialogFragment(R.layout.purchase_confirm_dialog) {
+    var binding: PurchaseConfirmDialogBinding?= null
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        binding = PurchaseConfirmDialogBinding.bind(view)
+    }
+    companion object {
+        const val TAG = "PurchaseConfirmationDialog"
+    }
+}
+```
+## 6. 참고 자료
+[Fragment Animation](https://developer.android.com/guide/fragments/animate)
+[Fragment Lifecycle](https://developer.android.com/guide/fragments/lifecycle)
+[Saving state](https://developer.android.com/guide/fragments/saving-state)
+[Communicate with fragment](https://developer.android.com/guide/fragments/communicate)
+[DialogFragment](https://developer.android.com/guide/fragments/dialogs)
+[Shared element transitions](https://medium.com/@bherbst/fragment-transitions-with-shared-elements-7c7d71d31cbb)
+
+
+
 
 
 
