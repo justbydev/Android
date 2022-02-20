@@ -132,11 +132,13 @@ data class NewsItemUiState(
 
 ### [Expose UI state]
 - 생성된 UI State를 어떻게 UI에 드러낼지에 대한 것(방법에 관한 것)
+  - UDF 사용으로 생성된 UI state는 시간이 지남에 따라 다양한 version의 흐름을 만든다.
+    - UI state 바뀔때마다 UDF에 의해 Viewmodel에서 UI로 flows
 - UI state 변환에 대해 observe하여 UI에 바로 반영되어야 한다.
   - observable data holder를 사용(LiveData or StateFlow)
   - 이를 사용하면 UI가 ViewModel에서 UI state를 가져와 처리할 필요 없이 UI state가 변화하자 마자 바로 반응하여 UI를 update할 수 있다.
   - 항상 최신의 상태를 유지한다.
-  - 또한 immutable stream으로 mutable stream을 드러내서 ViewModel에서만 UI state를 변경할 수 있도록 하고 드러내느 요소로는 변경할 수 없도록 한다.
+  - 또한 immutable stream으로 mutable stream을 드러내서 ViewModel에서만 UI state를 변경할 수 있도록 하고 드러내는 요소로는 변경할 수 없도록 한다.
 ```kotlin
 class NewsViewModel(...) : ViewModel() {
 
@@ -147,8 +149,9 @@ class NewsViewModel(...) : ViewModel() {
 
 }
 ```
-- UI state는 서로 연관된 것, 결합이 필요하 것들끼리 하나의 stream으로써 handle 하자.
-  - 서로 연관없는 UI State는 독립적으로 구성해야 한다.
+- 이후 Viewmodel에서 state을 변경하고 UI가 변경사항을 consume할 수 있도록 하는 method를 구성한다.
+#### Additional considerations
+- UI state는 서로 연관된 것, 결합이 필요한 것들끼리 하나의 stream으로써 handle 하자.
 ```kotlin
 data class NewsUiState(
     val isSignedIn: Boolean = false,
@@ -158,10 +161,16 @@ data class NewsUiState(
 
 val NewsUiState.canBookmarkNews: Boolean get() = isSignedIn && isPremium
 ```
+- 하나의 stream을 만드는 것이 편리하고 data consistency 유지도 좋지만 seperate stream을 만드는 것이 좋은 경우도 있다.
+  - 서로 연관성이 없는, 독립적인 state
+  - UiState diffing : UiState object에 field가 많아짐에 따라 single stream이라면 field 중 하나만 update 되어도 view에게 stream이 들어가게 된다. 늘어난 fields로 인한 consecutive stream emission이 발생하고 view는 그것이 같은 것인지 다른 것인지 모른채 그저 받기만 하여 계속 update를 하게 된다.
+    - 이 해결법 중 distinctUntilChanged()가 나온다.(LiveData를 observe할 때 동일한 결과, 동일한 값으로 setting해도 계속 전달되어 view가 update가 되는 상황을 해결하기 위한 라이브러리)
+    - [distinctUntilChanged()](https://developer.android.com/reference/androidx/lifecycle/Transformations)
 ### [Consume UI State]
 - UI State를 실제 UI에 반영하는 것
 - LiveData의 observe(), Kotlin flows의 collect() 사용
 - UI State를 반영할 때 주의해야 할 것은 UI의 lifecycle
+  - view가 user에게 display되지 않을 때 UI는 UI state를 observe하지 못하기 때문에 중요하다.
   - LiveData는 LifecycleOwner를 사용하여 View가 활성화되었을 때만 observe
   - Kotlin flows는 알맞은 coroutine scope를 사용
   - 결국 최소 STARTED 상태일 때 UI State를 관찰하고 UI에 반영해야 한다.
@@ -185,12 +194,15 @@ class NewsActivity : AppCompatActivity() {
 ```
 ### [Threading and concurrency]
 - ViewModel에서의 work는 main-safe해야 한다.
+  - main thread에서 call해도 safe해야 한다.
+  - data, domain layer 작업은 main thread가 아닌 다른 thread에서 이루어지기 때문이다.
 - 만약 ViewModel이 long-running operations을 한다면 background thread로 옮겨서 실행해야 한다.
   - Kotlin coroutines를 사용하는 것이 great way
 ### [Navigation]
 - Navigation 변경은 event에 의해 이루어진다.
 ### [Paging]
-- Paging Data는 계속 변하는 데이터이기 때문에 immutable UI state로 나타내면 안된다.
+- Paging Data는 계속 변하는 데이터(not an immutable type)이기 때문에 immutable UI state로 나타내면 안된다.
+  - ViewModel과 독립적인 stream으로 나타내야 한다.
 ### [Animations]
 - screen이 data를 모두 load한 후 animation이 시작되어야 한다.
 - postponeEnterTransition()으로 연기하고 모두 load되면 startPostponedEnterTransition()으로 animation을 시작한다.
