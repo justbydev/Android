@@ -35,17 +35,20 @@
 - Repositories + Data Sources
 #### Domain layer
 - complex business logic이나 여러 ViewModels에서 reuse할 수 있는 business logic을 구성하는 역할
-- 필수적인 layer는 아니고 필요에 의해 UI layer와 Data layer 사이에 사용된다.
+- 필수적인 layer는 아니고 필요에 의해 UI layer와 Data layer 사이에 사용되는 optional layer
 ### [General best practices]
 - app components에 app data를 저장하지 말자.
   - app components는 생명주기가 짧기 때문에 sources of data로 지정하면 안된다.
+  - user interaction이나 system 상황에 따라 짧게 종료될 수 있다.
 - Android class에 대한 의존성을 줄이자.
   - Context, Toast와 같은 Android framework SDK APIs들을 사용하는 것은 오직 app component만이여야 한다.
+  - 테스트 하기 용이해지며 coupling을 줄일 수 있다.
 - 다양한 app module간의 책임을 명확히 구분하자.
   - 관련된 역할을 하는 것은 분산시키지 말고 관련없는 역할을 하는 코드는 같은 곳에 정의하지 말아야 한다.
 - 각 모듈에서 가능한 작게 노출하자.
 - 다른 앱과 차별되는 app의 unique core에 집중하자.
   - 같은 보일러플레이트 코드를 반복 작성하면 안된다.
+  - 반복되는 보일러플레이트 코드는 여러 libraries에게 맡기자.
 - 독립적으로 테스트할 수 있도록 하자.
   - 같은 역할을 하는 logic을 여러 곳에 분산시키면 테스트 하기 어렵다.
   - 다른 모듈에서 오는 logic을 한 곳에 mix하는 거 역시 테스트 하기 어렵게 만든다.
@@ -55,15 +58,17 @@
 ## UI layer
 - UI는 data layer로부터 받은 app state의 시각적 표현이다.
 - UI layer는 UI가 화면에 display할 수 있도록 app data를 변환시켜주는 pipeline이다.
+  - data layer로부터 받은 data는 display를 위한 format과 다를 수 있다.
+  - 2개 이상의 data sources로부터의 data를 merge해야 하는 경우도 있다.
 - UI elements + State holders
 ### [UI layer architecture]
 - UI는 결국 activity, fragment와 같은 UI elements를 가리킨다.
 - UI layer의 기본적인 역할은 다음과 같다.
   - Data layer로부터 받은 app data를 UI가 쉽게 rendering할 수 있도록 변환한다.
   - user가 볼 수 있는 UI elements(View or jetpack compose)에 담을 수 있도록 변환한다.
-  - UI elements는 user로부터 input events를 받고 그 영향으로 바뀌는 UI data를 반영한다.
+  - UI elements는 user input events를 받고 그 영향으로 바뀌는 UI data를 반영한다.
 ### [Define UI state]
-- UI가 user가 보는 시각적 표현이라면 UI state는 UI가 현재 어떻게 보여야 하는지, 무엇을 보여주어야 하는지 등의 UI 현 상태에 대하 것
+- UI가 user가 보는 시각적 표현이라면 UI state는 app이 현재 어떻게 보여야 하는지를 나타내는 것
   - UI state의 변화는 바로 UI에 적용되어야 한다.
 - UI elements(View or jetpack compose) + UI State = UI
 ```kotlin
@@ -82,22 +87,28 @@ data class NewsItemUiState(
 )
 ```
 #### Immutability
-- 변경 불가능한 어느 한 순간의 상태를 보장한다.
-  - 변경 불가능한 어느 한 순간의 스냅샷
+- 변하지 않는 어느 한 순간의 상태를 보장한다.
+  - 변하지 않는 어느 한 순간의 스냅샷
+  - 이런 불변성을 통해 UI는 state을 읽어 UI elements를 update한다.
   - UI를 통해서 UI state를 직접 modify할 수 없다.
-  - 시간이 지나면 user interaction, external event 등으로 변할 수는 있으나 그 순간의 스냅샷은 immutable하다.
+    - UI가 직접 data를 바꾸게 되면 여러 요소들간의 data inconsistency가 발생하고 bug가 발생할 수 있다.
 #### Naming conventions
 - 기능 + UiState
 ### [Manage state with Unidirectional Data Flow]
-- UI가 UI state 변경에 대한 로직을 담당해서는 안된다.(여기서는 앞서 말했듯 UI는 activities, fragments를 의미)
+- 앞서 UI State는 불변성을 가진다 했지만 시간이 지남에 따라 user interaction이나 다른 events에 의해 modify될 수 있다.
+- UI가 UI state 변경에 대한 로직을 담당해서는 안된다.
+  - UI가 이런 logic을 담당하게 되면 점점 복잡해져 logic간 뚜렷한 경계 없이 coupling되어 testability에 영향을 끼치게 된다.
   - 오직 UI state를 받고 display하는 역할만 해야 한다.
   - UI state에 대한 로직은 state holders가 갖고 있어야 하고 이렇게 UI와 state holder의 역할을 확실히 분리해주는 역할을 하는 것이  Unidirectional Data Flow(UDF) pattern
 #### State holders
 - UI state를 생산하고 이 작업을 위한 necessary logic을 담고 있는 것으로 ViewModel이 담당
 - UI와 State holders(ViewModel class)간의 interation을 정의하는 것이 UDF
+  - event input과 그와 관련된 state output 간의 관계
+  - state은 ViewModel에서 UI elements로 flows down
+  - event는 UI elements에서 ViewModel로 flows up
 #### Unidirectional Data Flow(UDF)
 - ViewModel은 Data layer로부터 app data를 받는다.
-- 받은 app data를 ViewModel은 현재 UI 상황의 필요성에 맞게 변환시키고 변환시킨 결과가 UI State
+- 받은 app data를 ViewModel은 현재 UI 상황의 필요성에 맞게 변환시키고 그 결과가 UI State
 - UI는 UI State를 받아 UI를 구성
 - UI는 user events를 ViewModel에게 알린다.
 - ViewModel은 user events를 파악해 UI state를 update
@@ -107,13 +118,18 @@ data class NewsItemUiState(
 #### Types of logic
 - Business logic
   - what to do with state changes
-  - event에 의한 state 변경에 의해 실제 app data가 어떻게 변해야 하는지에 대한 logic
   - Domain or Data layers에만 존재해야 한다.
 - UI behavior logic(UI logic)
   - how to display state changes on the screen
   - 현재 화면에 UI state가 어떻게 보여야 하는지에 대한 logic
   - Context와 관련된 것이나 Toast, Snackbar 등과 같은 경우는 UI에 직접 구성
   - 조금 더 복잡한 UI State에 대한 것이라면 ViewModel에 구성
+#### Why use UDF?
+- 데이터 일관성이 유지된다.
+  - single source of truth for the UI
+- UI state를 UI와 분리시켜 별개로 테스트 가능
+- user event와 data source의 영향으로 인한 UI state의 변환이 well-defined pattern을 따르게 한다.
+
 ### [Expose UI state]
 - 생성된 UI State를 어떻게 UI에 드러낼지에 대한 것(방법에 관한 것)
 - UI state 변환에 대해 observe하여 UI에 바로 반영되어야 한다.
