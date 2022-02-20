@@ -5,18 +5,20 @@
 ## OverView
 ### [Mobile app user experiences]
 - 일반적인 안드로이드 앱은 여러 app component(activity, fragment, service 등 app manifest에 등록)로 구성되어 있다.
-  - app component는 안드로이드 앱을 구성하는 블록으로 System or User가 앱에 진입하는 진입점을 말한다.
 - resource가 제한적이라 언제든지 OS가 app process를 종료시킬 수 있다.
+  - OS나 user는 언제든지 app component를 destroy시킬 수 있다.
   - 이런 이벤트는 직접 제어할 수 없기에 app data, state를 app component에 저장해서는 안된다.
 ### [Common architectural principles]
 #### Seperation of concerns
 - Activity or Fragment에 모든 코드를 작성해서는 안된다.
   - Android OS와 app 사이를 이어주는 glue 역할일 뿐이다.
-  - 메모리 부족과 같은 시스템 조건으로 언제든지 제거될 수 있기 때문에 의존성을 높여서는 안된다.
+  - user interactions나 메모리 부족과 같은 시스템 조건으로 언제든지 제거될 수 있기 때문에 의존성을 높여서는 안된다.
 #### Drive UI from data models
 - Data model은 UI를 도출해야 한다.
-- app data를 가지는 data model은 View와 같은 UI elements와 독립적이어야 한다.
+- app data를 가지는 data model은 View와 같은 UI elements, app component와 독립적이어야 한다.
   - app component lifecycle에 영향을 안받을 수 있다.
+  - 하지만 OS가 app process를 memory로부터 제거하면 data model도 destroy될 수 있다.
+- 그래서 persistent model이 이상적이다.
   - app process가 제거되어도 data가 유지될 수 있다.
   - network 환경이 좋지 않아도 app을 사용할 수 있다.
 ### [Recommended app architecture]
@@ -25,10 +27,10 @@
 - app data를 screen에 보여주는 역할
 - 항상 최신의 상태를 반영해서 screen에 보여주어야 한다.
 - UI elements + State holders
-  - UI elements : Data를 직접 screen에 rendering하는 역할로 View or Jetpack Compose functions를 사용
+  - UI elements : Data를 screen에 rendering하는 역할로 View or Jetpack Compose functions를 사용
   - State holders : UI state를 갖고 그와 관련된 logic을 다루는 역할로 ViewModel class를 사용
 #### Data layer
-- app이 data를 어떻게 구성하는지에 대한 business logic을 구성하는 역할
+- app이 data를 어떻게 생성, 저장, 변화시키는지에 대한 business logic을 구성하는 역할
   - app data CRUD
 - Repositories + Data Sources
 #### Domain layer
