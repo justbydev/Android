@@ -514,7 +514,7 @@ class GetLatestNewsWithAuthorsUseCase(
 ## UI events
 - UI events : UI layer(UI or by the ViewModel)에 의해 handle되어야 하는 actions
 - UI : Views or Jetpack compose(UI elements)
-- User events : app과 interaction하는 user에 의해 발생하는 events
+- User events : app과 interaction하는 user에 의해 발생하는 events, UI events의 가장 일반적인 유형
 ### [UI event decision tree]
 <img width="614" alt="스크린샷 2022-02-16 오후 3 44 00" src="https://user-images.githubusercontent.com/17876424/154273031-bc0cf516-4572-46ed-8bc0-4694cc0408c7.png"><br>
 ### [Handle user events]
@@ -575,6 +575,7 @@ class LatestNewsViewModel(
     }
 }
 ```
+- RecyclerView adapter에서 callback interface를 만들어 activity나 fragment에서 직접 ViewModel functions를 호출하도록 하는 방법도 있다.
 ### [Handle ViewModel events]
 - ViewModel events라는 것은 예를 들면 ViewModel operation 중 refresh data가 있을 때 internetconnection이 좋지 않아 message를 보내야 하는 상황
 - ViewModel events는 반드시 UI state update로 마무리해야 한다.
