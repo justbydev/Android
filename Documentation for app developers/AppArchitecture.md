@@ -432,6 +432,7 @@ class NewsTasksDataSource(
   - readability 증가
   - app testability 개선
   - 역할을 나누어 class가 커지는 것을 방지
+- domain layer class를 가볍게 하기 위해서는 각각은 하나의 기능만을 담당하도록 하고 mutable data는 UI or data layer에서 관리하도록 한다.
 ### [Naming conventions]
 - verb in present tense(single action) + noun/what(optional) + UseCase
   - 예를 들면 FormatDateUseCase, LogOutUserUseCase
@@ -447,7 +448,7 @@ class GetLatestNewsWithAuthorsUseCase(
 ) { /* ... */ }
 ```
 ### [Call use cases in Kotlin]
-- operator invoke를 사용하여 function과 같이 call하도록 작성
+- operator invoke를 사용하여 function과 같이 use case class instances를 callable하게 만들 수 있다.
 ```kotlin
 class FormatDateUseCase(userRepository: UserRepository) {
 
@@ -480,8 +481,9 @@ class MyViewModel(formatDateUseCase: FormatDateUseCase) : ViewModel() {
 ### [Common tasks]
 #### Reusable simple business logic
 - date format을 바꾸는 FormatDateUseCase와 같이 여러 곳에서 재사용될 business logic을 포함
+  - 이 같은 logic을 use case class에 배치하면 logic이 사용되는 곳의 변경도 쉽고 독립적으로 test할 수 있게 된다.
 #### Combine repositories
-- news와 author 데이터를 같이 operate하기 위해 2개 이상의 repository를 의존하듯 여러 개의 repository를 의존해서 결과를 도출한다.
+- news와 author 데이터를 같이 operate하기 위해 2개 이상의 repository를 의존하는 예시처럼 여러 개의 repository를 의존해서 결과를 도출한다.
 ```kotlin
 /**
  * This use case fetches the latest news and the associated author.
@@ -505,7 +507,7 @@ class GetLatestNewsWithAuthorsUseCase(
         }
 }
 ```
-- 만약 database가 source of truth라면 여러 entity의 관계를 받는 query를 통해 결과를 얻을 수 있다면 Use case보다는 NewsWithAuthorRepository를 만드는 것이 더 낫다.
+- 만약 database가 source of truth라면 여러 entity의 관계를 받는 query를 통해 결과를 얻을 수 있다면 Use case보다는 NewsWithAuthorRepository repository class를 만드는 것이 더 낫다.
 ### [Other consumers]
 - domain layer class는 services, Application class와 같은 other classes나 TV, Wearable과 같은 other platforms에서도 reuse할 수 있다.
 
