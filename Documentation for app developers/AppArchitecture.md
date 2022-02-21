@@ -213,9 +213,9 @@ class NewsActivity : AppCompatActivity() {
 - Repositories + Data Sources
 - Repository는 다음과 같은 역할을 한다.
   - Rest of app에 App data를 노출
-  - data 변화를 한곳에 집중
+  - data 변화를 respository에서 집중
   - 여러 data source간의 충돌을 해결
-  - Rest of app에서 data source를 추상화한다.
+  - Rest of app으로부터 data source를 추상화한다.
   - business logic을 포함한다.
 - Data source는 하나의 source of data만을 사용한다.
   - file, network source, local db 등 하나의 source of data만을 나타낸다.
@@ -229,7 +229,7 @@ class ExampleRepository(
 ```
 ### [Expose APIs]
 - Data layer의 class는 CRUD나 app data 변화에 대한 functions를 가진다.
-- 위와 같은 functions가 가진 operation에 대한 결과나 data chaneging을 notify하기 위해서는 Kotlin에서는 suspend function, flows, Java에서는 RxJava나 callback을 사용한다.
+- 위와 같은 functions가 가진 operation에 대한 결과나 data changing을 notify하기 위해서는 Kotlin에서는 suspend function, flows, Java에서는 RxJava나 callback을 사용한다.
 ### [Naming conventions]
 - repository : type of data + Repository(예시) NewsRepository)
 - data source : type of data + type of source + DataSource(예시) NewsRemoteDataSource, NewsNetworkDataSource)
