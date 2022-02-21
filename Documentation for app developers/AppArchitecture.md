@@ -254,7 +254,7 @@ class ExampleRepository(
   - whole application에서 필요로 한다면 Application class의 lifecycle로
   - 어느 일정 flow에서만 필요로 한다면 그 flow가 가진 lifecycle로
 ### [Represent business models]
-- data model은 app data을 담은 model data class
+- data model은 app data을 담은 model class
 - Data source가 받는 app data가 app에서 전부 필요로 하지 않는 경우가 있다.
   - 필요한 data만으로 구성된 model class를 따로 분리해서 생성
   - 필요한만큼만 보관하여 app memory save 가능
@@ -290,6 +290,11 @@ interface NewsApi {
     fun fetchLatestNews(): List<ArticleHeadline>
 }
 ```
+- 이때 NesApi interface가 fetchLatestNews()에 대한 실행은 숨긴다.
+  - DataSource가 그 실행 방법에 대해 모른다.
+  - 이렇게 구성하면 예를 들어 API implementation을 Retrofit이든 HttpURLConnection이든 상관없게 되어 scalability, testability를 제공하게 된다.
+
+
 ```javascript
 // NewsRepository is consumed from other layers of the hierarchy.
 class NewsRepository(
@@ -356,6 +361,7 @@ class NewsRepository(
 - cancel될 수 없다.
   - process death가 되어도 살아있다.
 - 예를 들면 device charging 상태이거나 unmetered network인 경우 news app은 정기적, 자동으로 latest news를 가져오는 경우다.
+  - user device 연결이 좋지 않아도 최시 뉴스를 볼 수 있게 된다.
   - WorkManager를 사용하며 Worker class를 만든다.
 ```kotlin
 class RefreshLatestNewsWorker(
@@ -403,16 +409,19 @@ class NewsTasksDataSource(
     }
 }
 ```
-### [Save and retrieve data from disk]
-- data 중 user가 bookmark한 news나 user preferences와 같은 data는 process death되어도 유지되어야 한다.(network 없어도)
-- largest dataset : Room DB + Data Access Object(DAO, DB CRUD object)
-- small dataset : DataStore(key-value pairs
-- Chunks of data like a JSON : File
-  - 각각의 class들은 only one source for a specific type of data에 대해서만 책임을 갖도록 구성되어야 한다.
-
 ### [Expose errors]
 - repository와 data source 간의 interaction에서 succeed하거나 failure할 수 있다.
   - try/catch block을 사용하거나 flows의 경우 catch operator를 사용한다.
+
+### [Save and retrieve data from disk]
+- data 중 user가 bookmark한 news나 user preferences와 같은 data는 process death되어도 유지되어야 한다.(network 없어도)
+- 위와 같은 데이터들은 다음과 같은 방법으로 disk에 저장해야 한다.
+  - largest dataset : Room DB + Data Access Object(DAO, DB CRUD object)
+  - small dataset : DataStore(key-value pairs)
+    - certain type 혹은 certain part of the app과 관련된 데이터들만 모아 관리하는 DataStore class로 구분해야 한다.
+    - 관련 screen이 변할 때만 data를 emit하게 되어 update하기 편하고 lifecycle도 짧아질 수 있다.
+  - Chunks of data like a JSON object, bitmap : File
+- 각각의 class들은 only one source for a specific type of data에 대해서만 책임을 갖도록 구성되어야 한다.
 
 
 
