@@ -294,9 +294,50 @@ class DetailFragment : Fragment() {
   - activities, fragments는 LiveData object를 안전하게 observe하고 그들의 lifecycles가 destroyed되면 그 즉시 unsubscribed된다.
 
 ### [The advantages of using LiveData]
+#### UI와 data state의 일치 보장
+- Observer pattern을 따른다.
+  - data가 변경될 때 Observer object에게 알린다.
+  - app data가 변할 때 UI update를 observer가 해준다.
+#### No memory leaks
+- Lifecycle objects에 bound되어 lifecycle이 destroyed될 때 clean up된다.
+#### stopped activities에 의한 crash가 없다.
+- observer's lifeclce이 inactive하면 LiveData events를 받지 않는다.
+#### lifecycle을 더 이상 수동으로 handling하지 않는다.
+- Livedata가 lifecycle status를 알고 자동으로 관리한다.
+#### 항상 최신 데이터를 가진다.
+- lifecycle이 inactive였다가 active되면 바로 최신 데이터를 받는다.
+#### configuration changes
+- configuration changes가 발생하여 activity, fragment가 recreate되면 바로 최신 데이터를 받는다.
+#### resources 공유
+- system service를 공유할 수 있도록 singleton pattern 사용하는 LiveData object extend하여 사용할 수 있다.
+  - LiveData가 system service에 한번 연결되면 resource를 필요로 하는 모든 observer가 LiveData object를 관찰할 수 있다.
 
+### [Work with LiveData objects]
+- 다음의 과정으로 LiveData object를 생성한다.
+1) LiveData는 certain type of data를 가지며 주로 ViewModel class에 있다.
+2) Observer object를 생성하고 LiveData가 가진 data가 변할 때 어떤 작업을 할지 정의하는 onChanged() method를 정의한다. 주로 activity, fragment의 UI controller에 생성한다.
+3) observe() method를 통해 LiveData object에 Observer object를 attach한다. 또한, LifecycleOwner object도 take한다. 이를 통해 LiveData object를 Observer object가 subscribe하고 변화를 감지한다.
 
+- 이와 같이 구성하면 attach된 LifecycleOwner가 active state라면 LiveData object가 hold한 data가 변하면 register된 모든 observers가 trigger된다.
+- LifecycleOwner object 없이 항상 active 상태이고 싶다면 observeForever(Observer)를 사용하고 remove 시 removeObserver(Observer)를 사용한다.
+### [Create LiveData objects]
+```kotlin
+class NameViewModel : ViewModel() {
 
+    // Create a LiveData with a String
+    val currentName: MutableLiveData<String> by lazy {
+        MutableLiveData<String>()
+    }
+
+    // Rest of the ViewModel...
+}
+```
+- LiveData는 Collections를 비롯한 어떤 data로 hold할 수 있는 wrapper다.
+- LiveData를 activity, fragment가 아닌 ViewModel object에 두는 이유는 다음과 같다.
+  - UI controllers는 오직 data를 display하는 책임만 가지도록 한다.
+  - LiveData가 특정 activity, fragment에서만 coupling되도록 하지 않고 configuration change에도 살아남을 수 있도록 한다.
+
+### [Observe LiveData objects]
 
 
 
