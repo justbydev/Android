@@ -320,7 +320,7 @@ class DetailFragment : Fragment() {
 
 - 이와 같이 구성하면 attach된 LifecycleOwner가 active state라면 LiveData object가 hold한 data가 변하면 register된 모든 observers가 trigger된다.
 - LifecycleOwner object 없이 항상 active 상태이고 싶다면 observeForever(Observer)를 사용하고 remove 시 removeObserver(Observer)를 사용한다.
-### [Create LiveData objects]
+#### Create LiveData objects
 ```kotlin
 class NameViewModel : ViewModel() {
 
@@ -337,11 +337,184 @@ class NameViewModel : ViewModel() {
   - UI controllers는 오직 data를 display하는 책임만 가지도록 한다.
   - LiveData가 특정 activity, fragment에서만 coupling되도록 하지 않고 configuration change에도 살아남을 수 있도록 한다.
 
-### [Observe LiveData objects]
+#### Observe LiveData objects
+```kotlin
+class NameActivity : AppCompatActivity() {
+
+    // Use the 'by viewModels()' Kotlin property delegate
+    // from the activity-ktx artifact
+    private val model: NameViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Other code to setup the activity...
+
+        // Create the observer which updates the UI.
+        val nameObserver = Observer<String> { newName ->
+            // onChanged()
+            // Update the UI, in this case, a TextView.
+            nameTextView.text = newName
+        }
+
+        // Observe the LiveData, passing in this activity as the LifecycleOwner and the observer.
+        model.currentName.observe(this, nameObserver)
+    }
+}
+```
+- 대부분의 경우 LiveData observing은 app component의 onCreate()에서 시작된다.
+  - onCreate()에서 시작하기 때문에 onResume()에서의 불필요한 call을 만들지 않는다.
+  - app component가 STARTED state가 되자마자, 즉, active 되자마자 바로 LiveData를 observe할 수 있도록 한다.
+- LiveData는 data change 시 오직 active observer에게 update를 전달한다.
+- inactive에서 active state이 될 때 가장 마지막 값과 다를 때 update를 전달한다.
+  - update되면 Observer의 onChanged()를 invoke한다.
+
+#### Update LiveData objects
+- LiveData는 stored data를 update하는 method가 없고 MutableLiveData class를 사용해야 한다.
+  - 보통 MutableLiveData는 ViewModel에서 사용하고 immutable LiveData를 observer에게 expose한다.
+- setValue(T), postValue(T)를 사용한다.
+  - setValue(T)는 main thread에서, postValue(T)는 worker thread에서 사용한다.
+  - update하면 observer가 onChanged() method를 call한다.
+
+#### Use LiveData with Room
+- Room library는 observable queries를 지원하고 LiveData objects를 return한다.
+- Room은 database가 update될 때 LiveData object를 update하는 코드를 생성한다.
+- 필요할 때 background thread에서 비동기적으로 query를 run한다.
+
+#### Use coroutines with Livedata
+- LiveData는 Kotlin coroutines도 support한다.
+
+### [LiveData in an app's architecture]
+- LiveData는 lifecycle owner와 ViewModel objects lifespan 사이에서 communicate한다.
+- LiveData는 ViewModel class에 정의하고 activities, fragments가 hold하도록 하지 않는다.
+  - activities, fragments는 오직 data를 display하는 역할만 해야 한다.
+- LiveData를 data layer classes에서 hold하지 않아야 한다.
+  - LiveData는 비동기 데이터 흐름을 handle하기 위해 design되지 않았다.
+  - data stream을 combine할 능력이 제한적이다.
+  - 모든 LiveData objects는 main thread에서 observe 된다.<sup id="r8">[8)](#f8)</sup>
+  - 만약 ViewModel class가 아닌 다른 layer에서 사용하고 싶다면 Kotlin Flows를 사용하고 ViewModel에서 asLiveData()를 사용하여 변환하는 것을 고려하자.
+
+### [Extend LiveData]
+```kotlin
+class StockLiveData(symbol: String) : LiveData<BigDecimal>() {
+    private val stockManager = StockManager(symbol)
+
+    private val listener = { price: BigDecimal ->
+        value = price
+    }
+
+    override fun onActive() {
+        stockManager.requestPriceUpdates(listener)
+    }
+
+    override fun onInactive() {
+        stockManager.removeUpdates(listener)
+    }
+}
+```
+```kotlin
+public class MyFragment : Fragment() {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val myPriceListener: LiveData<BigDecimal> = ...
+        myPriceListener.observe(viewLifecycleOwner, Observer<BigDecimal> { price: BigDecimal? ->
+            // Update the UI.
+        })
+    }
+}
+```
+- onActive()의 경우 LiveData object가 active observer를 가질 때 호출된다.
+  - active state이기에 여기서 stock price를 update한다.
+- onInactive()는 LiveData object가 active observer르 가지지 않을 때 호출된다.
+  - observer가 inactive하기 때문에 StockManager service를 remove한다.
+- setValue(T)를 통해 update하고 active observer가 변화를 감지한다.
+- fragment's view의 Lifecycleowner를 pass하여 fragment view lifecycle이 active state일 때만 observe하도록 한다.
+- LiveData가 lifecycle-aware하다는 것은 multiple activities, fragments, services끼리 공유할 수 있다는 뜻이므로 LiveData를 singleton으로 사용할 수도 있다.
+```kotlin
+class StockLiveData(symbol: String) : LiveData<BigDecimal>() {
+    private val stockManager: StockManager = StockManager(symbol)
+
+    private val listener = { price: BigDecimal ->
+        value = price
+    }
+
+    override fun onActive() {
+        stockManager.requestPriceUpdates(listener)
+    }
+
+    override fun onInactive() {
+        stockManager.removeUpdates(listener)
+    }
+
+    companion object {
+        private lateinit var sInstance: StockLiveData
+
+        @MainThread
+        fun get(symbol: String): StockLiveData {
+            sInstance = if (::sInstance.isInitialized) sInstance else StockLiveData(symbol)
+            return sInstance
+        }
+    }
+}
+```
+### [Transform LiveData]
+- observer에게 보내기 전에 객체에 저장된 값을 변경하고 싶거나 다른 객체의 값에 따라 다른 LiveData instance를 반환해야 하는 경우가 있다.
+  - 이때, Transformations class를 사용한다.
+```kotlin
+val userLiveData: LiveData<User> = UserLiveData()
+val userName: LiveData<String> = Transformations.map(userLiveData) {
+    user -> "${user.name} ${user.lastName}"
+}
+```
+```kotlin
+private fun getUser(id: String): LiveData<User> {
+  ...
+}
+val userId: LiveData<String> = ...
+val user = Transformations.switchMap(userId) { id -> getUser(id) }
+```
+- 다른 LiveData의 변화를 감지하게 된다.
+- switchMap의 경우 map과 달리 람다함수가 LiveData object를 return한다.
+- transformation method를 사용하여 observer's lifecycle 전반에 걸쳐 정보를 전달할 수 있다.
+- return된 LiveData object를 observe하지 않다면 transformations은 calculate되지 않는다.
+  - transformations은 늦게 calculate되기 때문에 lifecycle-related behavior는 implicitly하게 pass down된다.
+
+- 만약 ViewModel object안에서 Lifecycle object를 필요로 한다면 transformations를 사용하는 것이 좋다.
+```kotlin
+class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
+
+    private fun getPostalCode(address: String): LiveData<String> {
+        // DON'T DO THIS
+        return repository.getPostCode(address)
+    }
+}
+```
+- 위와 같이 작성하면 UI component가 address를 받을 때마다 postal code를 return하게 된다.
+  - getPostalCode()를 호출할 때마다 이전 LiveData object를 unregister하고 새로운 LiveData object를 register한다.
+```kotlin
+class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
+    private val addressInput = MutableLiveData<String>()
+    val postalCode: LiveData<String> = Transformations.switchMap(addressInput) {
+            address -> repository.getPostCode(address) }
 
 
+    private fun setInput(address: String) {
+        addressInput.value = address
+    }
+}
+```
+- postalCode와 연관된 observer가 active라면 addressInput이 변할 때마다 postalCode가 다시 계산된다.
+- 이런 machanism을 사용하면 앱의 하위 수준(RoomDB 등)에서 요청이 있을 때 lazily 계산되는 LiveData object를 생성할 수 있다.
+  - ViewModel object는 LiveData object 참조를 쉽게 얻어 그 위에 transformation rule을 쉽게 적용할 수 있다.
 
+#### Create new transformations
+- own transformation을 implement하고 싶다면 MediatorLiveData class를 사용할 수 있다.
+  - MediatorLivedata class는 다른 LiveData object를 수신하고 그 객체의 event를 처리한다.
 
+### [Merge multiple LiveData sources]
+- MediatorLiveData는 LiveData의 subclass로 여러 LiveData source를 merge 할 수 있도록 한다.
+  - MediatorLiveData object observer는 어느 original LiveData가 변하든 trigger된다.
+  - database, network를 통해 받아오는 LiveData object가 있을 때 이를 MediatorLiveData로 merge 후 MediatorLiveData를 observe하면 database, network LiveData object 모두의 update를 observe한다.
 
 
 
@@ -435,6 +608,4 @@ class LifecycleBoundObserver extends ObserverWrapper implements LifecycleEventOb
     }
 }
 ```
-
-
-
+<b id="f8">8) </b>LiveData는 항상 UI를 처리하기 위해 사용하기에 mainthread에서 값을 처리하도록 하는 것일까? 다른 용도는 없을까? [↩](#r8)<br>
