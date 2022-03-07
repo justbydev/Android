@@ -176,7 +176,7 @@ public static ActivityAwesomeBinding bind(@NonNull View rootView) {
 
 
 ## Q&A
-<b id="f1">1) </b>Pacal case는 첫 단어를 대문자로 표기하고 붙여 쓰는 방식[↩](#r1)<br>
+<b id="f1">1) </b>Pacal case는 첫 단어를 대문자로 표기하고 붙여 쓰는 방식 [↩](#r1)<br>
 <b id="f2">2) </b> setContentView()에 layout file ID를 넘기지 않고 root view를 넘기는 이유
 ```kotlin
 @Override
@@ -197,8 +197,8 @@ public void setContentView(int resId) {
     mAppCompatWindowCallback.getWrapped().onContentChanged();
 }
 ```
-- Easy Mistake: Calling setContentView(…) with the layout resource id instead of the inflated binding object is an easy mistake to make. This causes the layout to be inflated twice and listeners to be installed on the wrong layout object. [↩](#r2)<br>
-- setContentView()는 view hierarchy를 inflate 시키고 activity content로 setting
+- Easy Mistake: Calling setContentView(…) with the layout resource id instead of the inflated binding object is an easy mistake to make. This causes the layout to be inflated twice and listeners to be installed on the wrong layout object. 
+- setContentView()는 view hierarchy를 inflate 시키고 activity content로 setting. [↩](#r2)<br>
 
 <b id="f3">3) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r3)<br>
 
