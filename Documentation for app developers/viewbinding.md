@@ -102,7 +102,7 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
      binding.textViewFragment.text = getString(string.hello_from_vb_bindfragment)
 }
 ```
-5) fragments와 view lifecycle이 있고 fragments는 views를 outlive하기 때문에 onDestroyView()에서 binding class instance를 clean up 한다.
+5) fragments와 view lifecycle이 있고 fragments는 views를 outlive하기 때문에 onDestroyView()에서 binding class instance를 clean up 한다.<sup id="r4">[4)](#f4)</sup>
 
 #### Provide hints for different configurations
 - 만약 여러 configurations에 대해 view들을 정의할 때 그에 따라 서로 다른 view를 사용할 수도 있다.(같은 ID를 가진)
@@ -201,8 +201,7 @@ public void setContentView(int resId) {
 - setContentView()는 view hierarchy를 inflate 시키고 activity content로 setting. [↩](#r2)<br>
 
 <b id="f3">3) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r3)<br>
-
-
+<b id="f4">4) </b> 
 
 
 
