@@ -198,7 +198,7 @@ public void setContentView(int resId) {
 }
 ```
 - Easy Mistake: Calling setContentView(…) with the layout resource id instead of the inflated binding object is an easy mistake to make. This causes the layout to be inflated twice and listeners to be installed on the wrong layout object. [↩](#r2)<br>
-
+- setContentView()는 view hierarchy를 inflate 시키고 activity content로 setting
 
 <b id="f3">3) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r3)<br>
 
