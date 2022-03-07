@@ -61,7 +61,7 @@ binding.button.setOnClickListener { viewModel.userClicked() }
 - Activity의 경우 onCreate()에서 다음과 같은 과정으로 view binding을 사용한다.
 1) binding class의 static inflate() method를 통해 binding class instance를 생성한다.
 2) getRoot()를 통해 root view에 대한 reference를 받아온다.
-3) setContentView()에 root view를 넘긴다.<sup id="r2">[1)](#f2)</sup>
+3) setContentView()에 root view를 넘긴다.<sup id="r2">[2)](#f2)</sup>
 
 #### Use view binding in fragments
 ```kotlin
