@@ -100,6 +100,7 @@ class SearchFragment : Fragment() {
     ...
 }
 ```
+
 ### [Use local persistence to handle process death for complex or large data]
 - database, shared prefereces와 같은 persisten local storage는 application이 user's device에 있는 한 계속 남아있다.
 - application process death되어도 데이터는 남아있지만 retrieve하기에 expensive하다.
@@ -117,11 +118,137 @@ class SearchFragment : Fragment() {
   - small amount of data인 경우
 
 
+## Saved State module for ViewModel
+- configuration change에 대해서는 ViewModel를 사용하면 되지만 system-initiated process death에 대해서도 handle하려면 onSaveInstanceState()를 함께 사용해야 한다.
+- UI state는 보통 activities가 아닌 ViewModel에 저장하는데 onSaveInstanceState()를 사용하여 boilerplate를 require하게 된다.
+  - 그래서 사용하는 것이 SavedStateHandle
+- ViewModel object는 constructor를 통해 SavedStateHandle object를 받는다.
+  - 이 object는 key-value map으로 되어 있다.
 
+### [Setup]
+```kotlin
+class SavedStateViewModel(private val state: SavedStateHandle) : ViewModel() { ... }
+```
+```kotlin
+class MainFragment : Fragment() {
+    val vm: SavedStateViewModel by viewModels()
 
+    ...
+}
+```
+- Fragment 1.2.0 혹은 Activity 1.1.0부터 위와 같이 사용한다.
+- default ViewModel factory가 ViewModel에게 appropriate한 SavedStateHandle를 제공한다.
+- custom ViewModelProvider.Factory instance를 사용하면 AbstractSavedStateViewModelFactory를 extend 해서 SavedStateHandle를 사용할 수 있다.
+- 만약 earlier version을 사용한다면 lifecycle-viewmodel-savedstate를 dependency에 추가하고 SavedStateViewModelFactory를 factory로 사용한다.
+### [Working with SavedStateHandle]
+- SavedStateHandle은 key-value map으로 set(), get()를 통해 사용한다.
+- getLiveData()를 통해 MutableLiveData도 return 받는다.
+- key 값이 update되면 LiveData는 새로운 값을 받는다.
+  - updated value는 transfrom LiveData로 사용할 수 있다.
+```kotlin
+class SavedStateViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
+    val filteredData: LiveData<List<String>> =
+        savedStateHandle.getLiveData<String>("query").switchMap { query ->
+        repository.getFilteredData(query)
+    }
 
+    fun setQuery(query: String) {
+        savedStateHandle["query"] = query
+    }
+}
+```
+- SavedStateHandle를 사용하면 process death되어도 따로 저장할 필요 없이 데이터가 유지된다.
+- 다음과 같은 method도 존재한다.
+  - contains(String key) : 주어진 key에 대한 value가 있는지 check
+  - remove(String key) : 주어진 key에 대한 value를 remove
+  - keys() : SavedStateHandle에 있는 모든 key를 return
 
+### [Supported types]
+- SavedStateHandle에 저장된 data는 activity, fragment의 다른 savedInstanceState와 함께 Bundle로 저장된다.
+#### Directly supported types
+<img width="694" alt="스크린샷 2022-03-08 오전 1 37 55" src="https://user-images.githubusercontent.com/17876424/157077471-6a564b65-5d57-425b-be99-e684b1320f87.png">
 
+- 만약 class가 위의 list를 extend하지 않는다면 parcelable하게 만들어야 한다.
+
+#### Saving non-parcelable classes
+- 만약 class가 Parcelable or Serializable<sup id="r5">[5)](#f5)</sup>를 implement하지 않고 modify할 수 없다면 SavedStateHandle를 통해 직접 저장할 수 없다.
+- Lifecycle 2.3.0-alpha03부터 SavedStateHandle은 setSavedStateProvider()를 사용하여 Bundle에 object를 저장할 수 있도록 한다.
+- saveState()를 통해서 SavedStateProvider로부터 Bundle을 가져오고 저장한다.
+- SavedStateHandle.get(key)르 통해서 Bundle를 가져오게 된다.
+  - 이때의 key 값은 setSavedStateProvider에서 저장한 Provider key값이다.
+```kotlin
+private fun File.saveTempFile() = bundleOf("path", absolutePath)
+
+private fun Bundle.restoreTempFile() = if (containsKey("path")) {
+    File(getString("path"))
+} else {
+    null
+}
+
+class TempFileViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
+    private var tempFile: File? = null
+    init {
+        val tempFileBundle = savedStateHandle.get<Bundle>("temp_file")
+        if (tempFileBundle != null) {
+            tempFile = tempFileBundle.restoreTempFile()
+        }
+        savedStateHandle.setSavedStateProvider("temp_file") { // saveState()
+            if (tempFile != null) {
+                tempFile.saveTempFile()
+            } else {
+                Bundle()
+            }
+        }
+    }
+
+    fun createOrGetTempFile(): File {
+      return tempFile ?: File.createTempFile("temp", null).also {
+          tempFile = it
+      }
+    }
+}
+```
+```java
+class TempFileViewModel extends ViewModel {
+    private File tempFile = null;
+
+    public TempFileViewModel(SavedStateHandle savedStateHandle) {
+        Bundle tempFileBundle = savedStateHandle.get("temp_file");
+        if (tempFileBundle != null) {
+            tempFile = TempFileSavedStateProvider.restoreTempFile(tempFileBundle);
+        }
+        savedStateHandle.setSavedStateProvider("temp_file", new TempFileSavedStateProvider());
+    }
+
+    @NonNull
+    public File createOrGetTempFile() {
+        if (tempFile == null) {
+            tempFile = File.createTempFile("temp", null);
+        }
+        return tempFile;
+    }
+
+    private class TempFileSavedStateProvider implements SavedStateRegistry.SavedStateProvider {
+        @NonNull
+        @Override
+        public Bundle saveState() {
+            Bundle bundle = new Bundle();
+            if (tempFile != null) {
+                bundle.putString("path", tempFile.getAbsolutePath());
+            }
+            return bundle;
+        }
+
+        @Nullable
+        private static File restoreTempFile(Bundle bundle) {
+            if (bundle.containsKey("path") {
+                return File(bundle.getString("path"));
+            }
+            return null;
+        }
+    }
+}
+```
 
 ## Q&A
 #### [Save UI states]
@@ -160,4 +287,16 @@ addOnContextAvailableListener(new OnContextAvailableListener() {
     }
 });
 ```
+<b id="f5">5) </b>Parceable과 Serializable의 차이[↩](#r5)<br>
+
+
+
+
+
+
+
+
+
+
+
 
