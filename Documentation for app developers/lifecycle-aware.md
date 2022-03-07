@@ -68,8 +68,8 @@ myLifecycleOwner.getLifecycle().addObserver(MyObserver())
   - 만약 whole applicationn process의 lifecycle를 manage하고 싶으면 ProcessLifecycleOwner를 사용할 수 있다.
 - LifecycleOwner는 Fragment, AppcompatActivity와 같은 class가 Lifecycle을 갖고 있음을 나타낸다.
   - custom application class가 LifecycleOwner interface를 implement할 수 있다.
-- DefaultLifecycleObserver를 implement한 component와 LifecycleOwner를 implement한 component는 함께 원활하게 작동한다.
-  - LifecycleOwner가 Lifecycle를 제공하고 이 Lifecycle에 Observer가 등록되어 monitor하게 된다.
+- DefaultLifecycleObserver를 implement한 component는 LifecycleOwner를 implement한 component와 원활하게 작동한다.
+  - LifecycleObserver가 관찰을 위해 등록하는 Lifecycle를 LifecycleOwner가 제공하기 때문이다.
 - 위에서 나왔던 locationlistener의 경우 DefaultLifecycleObserver를 implement하고 이 listener를 사용하는 component가 lifecycle를 전달한다.
   - 이 lifecycle의 state를 감지하여 자체적으로 감지하여 작동하 수 있도록 하여 lifecycle-aware하게 만든다.
 ```kotlin
@@ -116,7 +116,7 @@ class MyActivity : AppCompatActivity() {
 }
 ```
 #### Implementing a custom LifecycleOwner
-- Support Library 26.1.0 이후부터는 Fragments, Activities는 이미 LifecycleOwner를 implement한다.
+- Support Library 26.1.0 이후부터는 Fragments, Activities는 이미 LifecycleOwner를 implement한다.<sup id="r2">[2)](#f2)</sup>
   - Activities는 ComponentActivity가, Fragments는 Fragment가 LifecycleOwner를 implement
   - getLifecycle()에 대한 실제 구현도 되어 있다.
   - LifecycleRegistry<sup id="r1">[1)](#f1)</sup>를 return
@@ -145,11 +145,199 @@ class MyActivity : Activity(), LifecycleOwner {
 }
 ```
 ### [Best practices for lifecycle-aware components]
+- UI controller(activities and fragments)를 가볍게 유지해야 한다. 자체 데이터를 확보하기 보다는 ViewModel를 사용하고 LiveData 객체를 observe하여 변화를 views에 적용해야 한다.
+- data-driven UI를 작성해야 한다. 데이터 변경에 따라 View를 업데이트하거나 user actions를 Viewmodel에게 전달하는 것은 UI controller의 역할이다.
+- data logic은 Viewmodel class에 배치한다. Viewmodel은 UI controller와 rest of app의 connector 역할이다.
+  - 하지만 Viewmodel에 fetch data logic을 갖고 있으면 안되며 다른 component에서 data를 fetch하면 그 데이터를 받아 다시 UI controller에게 제공하게 된다.
+- Data binding을 사용하여 view와 UI controller 사이의 인터페이스를 깨끗하게 하자. view를 declarative하게 하고 activities, fragments에 작성하는 view update code를 minimize 시킬 수 있다.
+- UI가 복잡하다면 UI modifications를 처리할 presenter class를 생성하는 것을 고려하자.
+- Viewmodel에서 View, Activity의 context를 reference하는 것을 avoid해라.
+  - 만약 Viewmodel이 activity보다 outlive하면(configuration change와 같은 경우) activity가 leak되고 garbage collector에 의해 제대로 관리가 되지 않는다.
+  - long-running task나 비동기 작업의 경우 Kotlin coroutines를 사용하자.
+
+### [Use cases for lifecycle-aware components]
+- 위치 기반 어플리케이션 : app이 visible하면 fine-grained location을 사용하고 background로 가면 coarse-grained로 switch된다.
+  - LiveData를 통해 user location 변경에 따른 UI update가 자동으로 이루어진다.
+- video buffering이 최대한 빨리 시작하지만 app이 완전히 시작될때까지 연기한다.
+  - app이 destroy되면 buffering을 종료한다.
+- app이 foreground에 있으면 네트워크 데이터를 실시간 update하고 background가 되면 자동으로 중지할 수 있다.
+- app background에 있으면 animated drawables를 중지하고 foreground로 오면 다시 시작한다.
+
+## Viewmodel
+- Viewmodel class는 lifecycle를 고려하여 UI-related data를 store and manage하며 configuration change에도 data가 살아남도록 해준다.
+- user actions나 device events에 의해 UI controllers(activities and fragments)가 destroy되거나 re-create되고 그 과정에서 transient UI-related data가 lost된다.
+  - simple data의 경우 onSaveInstanceState()를 통해 저장하고 onCreate의 bundle을 통해 restore할 수 있지만 large data는 할 수 없다.
+- 시간을 소모하는 asynchronous calls를 필요로 하는 경우도 있는데 UI controller destroy될 때 memory leak을 막기 위해 clean up되어야 한다.
+- 이와 같은 작업들을 비롯하여 data-related logic을 UI controllers에서 다루게 되면 excessive responsibility가 부과되어 test하기 힘들어진다.
+  - 따라서 이런 logic이나 view data ownership을 UI controller로부터 seperate시키는 것이 좋다.
+
+### [Implement a ViewModel]
+```kotlin
+class MyViewModel : ViewModel() {
+    private val users: MutableLiveData<List<User>> by lazy {
+        MutableLiveData<List<User>>().also {
+            loadUsers()
+        }
+    }
+
+    fun getUsers(): LiveData<List<User>> {
+        return users
+    }
+
+    private fun loadUsers() {
+        // Do an asynchronous operation to fetch users.
+    }
+}
+```
+```kotlin
+class MyActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Create a ViewModel the first time the system calls an activity's onCreate() method.
+        // Re-created activities receive the same MyViewModel instance created by the first activity.
+
+        // Use the 'by viewModels()' Kotlin property delegate
+        // from the activity-ktx artifact
+        val model: MyViewModel by viewModels()
+        // val model = ViewModelProvider(this@MyActivity).get(MyViewModel::class.java)
+        model.getUsers().observe(this, Observer<List<User>>{ users ->
+            // update UI
+        })
+    }
+}
+```
+- UI를 위한 data를 ViewModel object에게 맡기고 configuration changes가 일어나도 data를 자동으로 유지한다.
+- 만약 activity가 re-created되면 처음 activity가 create한 같은 MyViewModel instance를 받게 된다.
+- owner activity가 finished되면 ViewModel object의 onCleared()<sup id="r4">[4)](#f4)</sup> method가 호출되어 resources가 clean up된다.
+- ViewModel objects는 views나 LifecycleOwners를 outlive하도록 design되어 있다.
+- 또한 LiveData를 contain할 수 있다.
+  - 단, Viewmodel object는 LiveData를 observe하면 안된다.
+
+### [The lifecycle of a ViewModel]
+<img width="434" alt="스크린샷 2022-03-07 오후 5 34 53" src="https://user-images.githubusercontent.com/17876424/156996040-83604c8b-16ff-40c2-acd3-36500f31ef6a.png">
+
+
+- Viewmodel를 얻을 때 ViewModelProvider<sup id="r5">[5)](#f5)</sup>에게 전달되는 Lifecycle에 Viewmodel object가 scope 된다.
+  - scope된 Lifecycle이 끝나기 전까지 ViewModel은 memory에 남아있게 된다.
+  - Activity라면 finished 될때까지, Fragment라면 detached 될때까지
+- Viewmodel은 처음에 activity object의 onCreate()에서 request한다.
+  - 만약 configuration change에 의해 onCreate()가 여러번 호출되면 activity가 finished되고 destroyed되기 전까 처음 request했던 ViewModel이 계속 존재하게 된다.
+
+
+### [Share data between fragments]
+- 같은 activity에 attach된 여러 fragment들의 communicate는 Viewmodel을 통해 할 수 있다.
+- activity scope<sup id="r6">[6)](#f6)</sup>를 사용하는 ViewModel를 share하여 communication을 handle할 수 있다.
+```kotlin
+class SharedViewModel : ViewModel() {
+    val selected = MutableLiveData<Item>()
+
+    fun select(item: Item) {
+        selected.value = item
+    }
+}
+
+class ListFragment : Fragment() {
+
+    private lateinit var itemSelector: Selector
+
+    // Use the 'by activityViewModels()' Kotlin property delegate
+    // from the fragment-ktx artifact
+    private val model: SharedViewModel by activityViewModels()
+    //val model = ViewModelProvider(requireActivity()).get(SharedViewModel::java.class)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        itemSelector.setOnClickListener { item ->
+            // Update the UI
+        }
+    }
+}
+
+class DetailFragment : Fragment() {
+
+    // Use the 'by activityViewModels()' Kotlin property delegate
+    // from the fragment-ktx artifact
+    private val model: SharedViewModel by activityViewModels()
+    //val model = ViewModelProvider(requireActivity()).get(SharedViewModel::java.class)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        model.selected.observe(viewLifecycleOwner, Observer<Item> { item ->
+            // Update the UI
+        })
+    }
+}
+```
+- 위와 같이 작성하면 ViewModelProvider를 통해서 activity scope를 사용하는 같은 SharedViewModel instance를 받게 된다.
+- 이와 같이 사용하면 다음과 같은 장점이 있다.
+  - activity에서 부가적인 작업을 할 필요 없다.
+  - Fragments는 서로에 대해 알 필요 없이 ViewModel를 통해서만 communicate 하면 된다.
+    - 하나의 Fragment가 사라져도 다른 Fragment는 정상적으로 작동된다.
+  - 각각의 Fragment는 각자의 lifecycle를 갖고 있는데 서로의 lifecycle에 영향을 받지 않는다.
+
+
+### [Replacing Loaders with ViewModel]
+- CursorLoader와 같은 Loader class는 app UI data와 database 간의 동기화를 유지하는데 자주 사용된다.
+- 이를 ViewModel이 대체할 수 있다.
+  - UI controller가 data-loading operation과 분리된다.
+- CursorLoader를 사용하면 CursorLoader가 database content를 observe하고 database가 변하면 data를 reload하고 UI를 update한다.
+- Viewmodel은 Room, LiveData를 통해 대체한다.
+  - database가 바뀌면 Room이 LiveData에게 알리고 LiveData를 observe하여 UI를 update한다.
+
+
+
+
+
+
+
+
+
+
 
 
 
 ## Q&A
+#### Lifecycle
 <b id="f1">1) </b>Lifecycle class에 대한 구현체로 여러 observer를 handle할 수 있다. [↩](#r1)<br>
+<b id="f2">2) </b>그럼 이전 버전에서는 lifecycle을 어떻게 처리하고 observe 했을까? [↩](#r2)<br>
+<b id="f3">3) </b>Lifecycle/LifecycleOwner/LifecycleObserver/LifecycleRegistry 구성 정리 <br>
+#### ViewModel
+<b id="f4">4) </b>onCleared() 호출 과정
+- Activity, Fragment는 ViewmodelStore를 implement한다.
+```kotlin
+getLifecycle().addObserver(new LifecycleEventObserver() {
+    @Override
+    public void onStateChanged(@NonNull LifecycleOwner source,
+            @NonNull Lifecycle.Event event) {
+        if (event == Lifecycle.Event.ON_DESTROY) {
+            // Clear out the available context
+            mContextAwareHelper.clearAvailableContext();
+            // And clear the ViewModelStore
+            if (!isChangingConfigurations()) {
+                getViewModelStore().clear();
+            }
+        }
+    }
+});
+```
+- ViewmodelStoreOwner를 통해 ViewModelStore를 받아온다.
+- lifecycle event가 ON_DESTROY인데 configuration change에 의한 것이 아니라면 ViewmodelStore.clear()
+- ViewModel의 onCleared()가 호출되어 ViewModel이 clear된다.[↩](#r4)<br>
+
+
+<b id="f5">5) </b>ViewModelStore/ViewModelStoreOwner/ViewModelProvider 구성 정리 
+- Activity, Fragment는 ViewModelStoreOwner를 implement한다.
+  - ViewmodelStoreOwner가 ViewmodelStore를 갖고 있는 scope
+- ViewModelProvider를 통해서 Viewmodel instance를 받는다.
+  - 내부적으로 mFactory, mViewModelStore를 갖고 있다.
+  - mFactory는 Viewmodel 객체 생성 팩토리, mViewModelStore는 생성된 Viewmodel 객체 저장
+- ViewModelStore는 Hashmap을 사용하여 Viewmodel class 이름을 key로 Viewmodel를 저장한다.
+- ViewModelProvider(ViewModelOwner).get("key")
+  - key에 Viewmodel class 이름을 보낸다.
+  - 만약 이미 key값에 해당하는 것을 갖고 있다면 ViewModelStore에 있는 것 재사용
+  - 만약 없다면 mFactory를 통해 create해서 새롭게 생성하고 ViewModelStore에 저장
+  - Factory는 따로 지정하지 않으면 defaultFactory 사용[↩](#r5)<br>
+
+<b id="f6">6) activity scope란 ViewModelStoreOwner로 지정한 것을 말할까? ViewModelStoreOwner에 this를 보내는 것으로 지정 가능한 것은 Activity가 자체적으로 Lifecycle을 갖고 있기 때문인가?[↩](#r6)<br>
+
 
 
 
