@@ -519,11 +519,11 @@ class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
 
 
 ## Q&A
-#### Lifecycle
+#### [Lifecycle]
 <b id="f1">1) </b>Lifecycle class에 대한 구현체로 여러 observer를 handle할 수 있다. [↩](#r1)<br>
 <b id="f2">2) </b>그럼 이전 버전에서는 lifecycle을 어떻게 처리하고 observe 했을까? [↩](#r2)<br>
 <b id="f3">3) </b>Lifecycle/LifecycleOwner/LifecycleObserver/LifecycleRegistry 구성 정리 <br>
-#### ViewModel
+#### [ViewModel]
 <b id="f4">4) </b>onCleared() 호출 과정
 - Activity, Fragment는 ViewmodelStore를 implement한다.
 ```kotlin
@@ -562,7 +562,7 @@ getLifecycle().addObserver(new LifecycleEventObserver() {
 
 <b id="f6">6) </b>activity scope란 ViewModelStoreOwner로 지정한 것을 말할까? ViewModelStoreOwner에 this를 보내는 것으로 지정 가능한 것은 Activity가 자체적으로 Lifecycle을 갖고 있기 때문인가?[↩](#r6)<br>
 
-#### LiveData
+#### [LiveData]
 <b id="f7">7) </b>LiveData observe 내부 코드 [↩](#r7)<br>
 ```kotlin
 @MainThread
