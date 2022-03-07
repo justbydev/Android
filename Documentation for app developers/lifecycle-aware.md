@@ -283,7 +283,17 @@ class DetailFragment : Fragment() {
   - database가 바뀌면 Room이 LiveData에게 알리고 LiveData를 observe하여 UI를 update한다.
 
 
+## LiveData
+- LiveData는 observable data holder class다.
+- LiveData는 app component의 lifecycle를 인식하는 lifecycle-aware다.
+  - LiveData는 active lifecycle state일 때만 update 되도록 한다.
+- LiveData는 Observer class를 통해 구현되는 observer를 고려하여 lifecycle이 STARTED, RESUMED state일 때 observer가 active하도록 한다.
+  - inactive observer일 때는 LiveData objects의 변화를 감지하지 못한다.
+- observer는 LifecycleOwner interface를 implement한 object와 함께 등록할 수 있다.
+  - 따라서 Lifecycle object가 DESTROYED일 때 observer도 remove된다.<sup id="r7">[7)](#f7)</sup>
+  - activities, fragments는 LiveData object를 안전하게 observe하고 그들의 lifecycles가 destroyed되면 그 즉시 unsubscribed된다.
 
+### [The advantages of using LiveData]
 
 
 
@@ -336,8 +346,54 @@ getLifecycle().addObserver(new LifecycleEventObserver() {
   - 만약 없다면 mFactory를 통해 create해서 새롭게 생성하고 ViewModelStore에 저장
   - Factory는 따로 지정하지 않으면 defaultFactory 사용[↩](#r5)<br>
 
-<b id="f6">6) activity scope란 ViewModelStoreOwner로 지정한 것을 말할까? ViewModelStoreOwner에 this를 보내는 것으로 지정 가능한 것은 Activity가 자체적으로 Lifecycle을 갖고 있기 때문인가?[↩](#r6)<br>
+<b id="f6">6) </b>activity scope란 ViewModelStoreOwner로 지정한 것을 말할까? ViewModelStoreOwner에 this를 보내는 것으로 지정 가능한 것은 Activity가 자체적으로 Lifecycle을 갖고 있기 때문인가?[↩](#r6)<br>
 
+#### LiveData
+<b id="f7">7) </b>LiveData observe 내부 코드 [↩](#r7)<br>
+```kotlin
+@MainThread
+public void observe(@NonNull LifecycleOwner owner, @NonNull Observer<? super T> observer) {
+    assertMainThread("observe");
+    if (owner.getLifecycle().getCurrentState() == DESTROYED) {
+        // ignore
+        return;
+    }
+    LifecycleBoundObserver wrapper = new LifecycleBoundObserver(owner, observer);
+    ObserverWrapper existing = mObservers.putIfAbsent(observer, wrapper);
+    if (existing != null && !existing.isAttachedTo(owner)) {
+        throw new IllegalArgumentException("Cannot add the same observer"
+                + " with different lifecycles");
+    }
+    if (existing != null) {
+        return;
+    }
+    owner.getLifecycle().addObserver(wrapper);
+}
+```
+```kotlin
+class LifecycleBoundObserver extends ObserverWrapper implements LifecycleEventObserver {
+    @NonNull
+    final LifecycleOwner mOwner;
+
+    ...
+
+    @Override
+    public void onStateChanged(@NonNull LifecycleOwner source,
+            @NonNull Lifecycle.Event event) {
+        Lifecycle.State currentState = mOwner.getLifecycle().getCurrentState();
+        if (currentState == DESTROYED) {
+            removeObserver(mObserver);
+            return;
+        }
+        Lifecycle.State prevState = null;
+        while (prevState != currentState) {
+            prevState = currentState;
+            activeStateChanged(shouldBeActive());
+            currentState = mOwner.getLifecycle().getCurrentState();
+        }
+    }
+}
+```
 
 
 
