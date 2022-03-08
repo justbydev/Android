@@ -240,6 +240,33 @@ private fun newDocumentIntent() =
 ### [Enable recents URL sharing(Pixel only)]
 - Android 12 이상의 pixel에서는 Recents screen에서 직접 web link를 공유할 수 있다.
 
+## Restrictions on starting activities from the background
+- API level 29 이상부터 app이 background에서 실행될 때 Activity를 시작할 수 있는 시점에 제한이 있다.
+- background에서 Activity를 시작하는 대신 notification을 사용하는 guide를 제시한다.
+### [Display notifications instead]
+- background에서 실행되는 app은 직접 Activity를 시작하지 않는 대신 time-sensitive notification을 표시하여 긴급한 정보를 user에게 전달한다.
+- 이런 알림 시스템은 다음과 같은 장점을 제공한다.
+  - device 사용 시 사용자에게 응답할 수 있는 notification을 제공한다.
+    - 사용자는 현재 상태를 유지하고 screen에 보이는 content를 control할 수 있다.
+  - time-sensitive notification은 방해 금지 모드를 지킨다.
+  - device's screen이 꺼져 있으면 full-screen intent가 바로 시작된다.
+  - device's Settings screen을 통해 최근에 어떤 app이 noticiation을ㄹ 보냈는지 확인할 수 있다.
+### [Exceptions to the restriction]
+- Android 10 이상의 app에서는 다음 중 하나 이상의 조건을 만족할 때 activities를 시작할 수 있다.
+  - app이 visible window를 가질 때
+  - app이 foreground task의 back stack에 있는 activity를 가진 경우
+  - app의 Recents screen의 기존 작업 back stack에 있는 activity를 가진 경우
+  - 가장 최근에 시작한 activity를 가진 경우
+  - app이 가장 최근에 activity에서 finish()를 호출한 경우
+    - finish()가 호출된 시점에 activity가 foreground에 있거나 foreground task의 back stack에 있는 경우 해당
+  - system에 binding된 service가 있는 경우
+  - 다른 visible app에 binding된 service가 있는 경우
+  - app이 다른 visible app에서 전송된 PendingIntent를 받은 경우
+  - app이 UI를 실행해야 하는 system Broadcast를  경우
+    - Broadcast가 전송되고 몇 초 후에 app이 activity를 시작할 수 있다
+  - app이 CompanionDeviceManager API를 통해 부속 하드웨어 기기와 연결되는 경우
+    - app은 사용자가 페어링된 기기에서 수행하는 작업에 대한 응답으로 작업을 시작할 수 있다.
+
 ## Q&A
 <b id="f1">1) </b>onBackPressedDispatcher를 사용하라는 뜻일까?[↩](#r1)<br>
 - OnBackPressedCallback abstract method인 handleOnBackPressed() 사용
