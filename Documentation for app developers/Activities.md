@@ -41,12 +41,50 @@
 </activity>
 ```
 - Intent filters를 지정하게 되는데 explicit request뿐 아니라 implicit request로 activity를 launch할 수 있도록 한다.
-  - < action >은 =
+  - < action >은 수행할 일반적인 작업을 의미하고 < category >, < data >는 optional element다.<sup id="r1">[1)](#f1)</sup>
+```kotlin
+val sendIntent = Intent().apply {
+    action = Intent.ACTION_SEND
+    type = "text/plain"
+    putExtra(Intent.EXTRA_TEXT, textMessage)
+}
+startActivity(sendIntent)
+```
+- 만약 다른 app이 activities에 접근하지 못하게 하려면 intent filters를 지정하지 않는다.
+#### Declare permissions
+```Gradle
+<manifest>
+<activity android:name="...."
+   android:permission=”com.google.socialapp.permission.SHARE_POST”
+
+/>
+```
+```Gradle
+<manifest>
+   <uses-permission android:name="com.google.socialapp.permission.SHARE_POST" />
+</manifest>
+```
+- 만약 manifest에서 같은 permissions을 갖고 있지 않다면 parent activity는 child activity를 launch할 수 없다.
+- 만약 parent activity에서 uses-permission을 선언했다면 각각의 child activity에서도 반드시 matching해야 한다.
+- activity에 permission을 지정했다면 app의 manifest에서도 반드시 uses-permission을 지정해야 한다.<sup id="r2">[2)](#f2)</sup>
 
 
 
 
 
+## Q&A
+<b id="f1">1) </b>category.DEFAULT, category.LAUNCHER, action.MAIN[↩](#r1)<br>
+- implicit intent를 받으려면 반드시 category.DEFAULT를 intent filter category에 포함시켜야 한다.
+- action.MAIN은 이 activity가 main entry point이고 다른 intent data를 expect하지 않는다는 뜻이다.
+- category.LAUNCHER는 activity's icon이 system's app launcher에 위치해야 한다는 것이다.
+  - 이 둘을 반드시 함께 사용해야 activity가 app launcher로써 나타날 수 있다.
+  - exported 속성이 있는데 이를 true로 하면 모든 app에서 이 activity에 access할 수 있다.
+  - category.LAUNCHER를 포함한 경우 true로 지정하고 다른 activity는 보통 false로 지정한다.
+- [Intent filters](https://developer.android.com/guide/components/intents-filters)
+- [exported](https://developer.android.com/guide/topics/manifest/activity-element#exported)
+
+
+<b id="f2">2) </b> 각각의 activity에 permission하면 uses-permission에도 똑같이 지정해야 한다고 하는데 그러면 굳이 activity마다 permission을 지정할 필요가 있을까?[↩](#r2)<br>
 
 
 
