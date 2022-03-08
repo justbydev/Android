@@ -144,6 +144,38 @@
     - kill된 후 다시 복구되면 user experience에 영향을 주지 않도록 saved state를 사용하여 복구한다.
   - 이 process들은 list로 관리되며 정확한 순서는 구현 세부 사항이지만 다른 process보다 유용한 process를 유지하려고 한다.
 
+
+## Parcelables and Bundles
+### [Sending data between activities]
+```kotlin
+val intent = Intent(this, MyActivity::class.java).apply {
+    putExtra("media_id", "a1b2c3")
+    // ...
+}
+startActivity(intent)
+```
+- 새로운 Activity 시작을 위해 startActivity(Intent) 사용을 위해 Intent object를 생성할 때 putExtra를 통해 parameter를 전달할 수 있다.
+- OS는 intent의 Bundle을 parcel하고 새로운 activity를 시작하면 data를 un-parcel해서 새로운 activity한테 전달한다.
+- Intent object를 보낼 때 Bundle class 사용을 추천한다.
+  - Bundle class는 parcel을 사용하여 최적화된 marshalling, unmarshalling<sup id="r5">[5)](#f5)</sup>을 제공한다.
+- 어떤 object의 경우 복잡해서 직접 Parceable을 implemen해야 한다.
+  - writeToParcel(android.os.Parcel, int) method를 사용하여 class field를 Parcel에 담는다.
+  - Parceable.Creator interface를 implement한 non-null field CREATOR를 제공해야 하며 createFromParcel() method를 통해 Parcel를 다시 원래 object로 변환한다.
+- intent를 통해 data 전송 시 few KB limit이 있어서 너무 많은 data를 전송하면 TransactionTooLargeException<sup id="r6">[6)](#f6)</sup>이 발생하게 된다.
+
+### [Sending data between processes]
+- process끼리 전송 시 custom Parceable object를 사용하지 않는 것을 권장한다.
+  - 서로 주고 받는 app끼리 정확히 같은 version의 custom class를 주고받아야 한다.
+  - app이 system에게 custom parceable를 전송하려고 하면 system은 knowledge가 없는 class를 unmarshall하지 못해서 error가 발생한다.
+- Parcel object는 Binder transaction buffer를 사용하며 Binder transaction buffer는 1MB의 고정된 size를 가진다.
+  - 이 limit은 activity level이 아닌 process level이다.
+  - 이런 transaction은 onSaveInstanceState, startActivity, any interaction with the system 등을 전부 포함한다.
+  - size limit을 넘게 되면 TransactionTooLargeException이 발생한다.
+  - 또한, savedInstanceState의 경우 데이터를 user가 다시 해당 activity로 돌아오기 전까지 hold하고 있어야 하기 때문에 50k 이하로 유지하기를 권장한다.
+
+
+
+
 ## Q&A
 <b id="f1">1) </b>onBackPressedDispatcher를 사용하라는 뜻일까?[↩](#r1)<br>
 - OnBackPressedCallback abstract method인 handleOnBackPressed() 사용
@@ -181,3 +213,14 @@ public class FormEntryFragment extends Fragment {
 - 물론 다시 같은 activity를 호출하게 되면 재사용된다.
 - 즉, singletask는 하나의 task에 activity instance는 무조건 한 개 있어야 한다는 것을 의미한다.
 - 이는 singleInstance도 같은 현상이 나타날 수 있다.
+<b id="f5">5) </b> marshalling, unmarshalling이란[↩](#r5)<br>
+- Serialization은 객체 데이터를 일련의 byte stream으로 변환하는 작업
+- Marshalling은 객체의 메모리 구조를 저장이나 전송을 위해 필요로 하는 자료 형태로 변환하는 작업
+  - Bundle은 parcel을 이용해서 marshalling한다고 되어 있는데 그러면 marshalling은 전송을 위해 사용하는 변화 과정 일련을 말하는 것일까?
+- Serialization과 Parceable, Marshalling의 정확한 차이는 무엇이며 분명 Bundle은 parcelable를 사용하여 비용이 드는 작업이라고 했었는데 잘못 이해한 것인가?
+
+<b id="f6">6) </b> TransactionTooLargeException [↩](#r6)<br>
+- Parcel objects는 Binder transaction buffer를 사용한다.
+- Binder transaction buffer는 1MB의 고정된 size를 가진다.
+- [TransactionTooLargeException](https://developer.android.com/reference/android/os/TransactionTooLargeException)
+
