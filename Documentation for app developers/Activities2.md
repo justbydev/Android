@@ -173,8 +173,72 @@ startActivity(intent)
   - size limit을 넘게 되면 TransactionTooLargeException이 발생한다.
   - 또한, savedInstanceState의 경우 데이터를 user가 다시 해당 activity로 돌아오기 전까지 hold하고 있어야 하기 때문에 50k 이하로 유지하기를 권장한다.
 
+## Recents screen
+- Recents screen(Overview screen, recent task list, recent apps)는 system level UI로 최근에 access한 activities, tasks의 list다.
+- Recents screen은 document-centric model로 다른 document를 가진 같은 activity의 여러 instance도 Recents screen에 보여준다.
+- 보통 Recents screen에 activities, tasks가 어떻게 보이는지는 system이 정하지만 app이 어떻게 보일지 정할 수 있다.
+  - ActivityManager.AppTask class는 task를 관리할 수 있게 하고 activity Intent flag나 manifest의 < activity > attribute를 통해 관리할 수 있다.
 
+### [Add tasks to the Recents screen]
+#### Use the Intent flag to add a task
+- activity의 새로운 document를 만들 때 startActivity()를 call하고 Intent를 pass한다.
+  - Intent flag를 사용하게 된다.
+- FLAG_ACTIVITY_NEW_DOCUMENT를 사용하면 activity를 새로운 task로 treat하게 만들 수 있다.
+  - Recents screen에 activity가 new task로 나타난다.
+  - 반드시 launchMode는 "stardard"여야 한다.
+- FLAG_ACTIVITY_MULTIPLE_TASK를 사용하면 항상 new document를 create한다.<sup id="r7">[7)](#f7)</sup>
+  - target activity를 root로 항상 새로운 task를 생성한다.
+- main activity가 새로운 activity를 launch할 때 existing task를 탐색한다.
+  - intent component name, intent data가 일치하는 task가 있는지 탐색한다.
+  - 만약 그런 task가 없거나 FLAG_ACTIVITY_MULTIPLE_TASK를 사용했다면 그 activity를 root로 한 새로운 task가 생성된다.
+  - 만약 있다면 onNewIntent()를 통해 존재하는 task가 front로 온다.
 
+#### Use the activity attribute to add a task
+- manifest에서는 < activity > attribute의 android:documentLaunchMode를 설정한다.
+- intoExisting<sup id="r8">[8)](#f8)</sup>
+  - 이미 존재하는 task를 재사용한다.
+  - FLAG_ACTIVITY_MULTIPLE_TASK를 세팅하지 않은 FLAG_ACTIVITY_NEW_DOCUMENT와 같다.
+- always
+  - document가 open되어 있어도 항상 new task를 만든다.
+  - FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_DOCUMENT를 같이 사용한 것과 같다.<sup id="r9">[9)](#f9)</sup>
+- none
+  - document를 위해 새로운 task를 만들지 않는다.
+  - 아무것도 설정하지 않았을 경우의 default attribute
+- never
+  - document를 위해 새로운 task를 만들지 않는다.
+  - FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_DOCUMENT를 override한다.
+    - 둘 중 하나가 설정되어도 Recents screen에는 app을 위한 한 개의 task를 나타낸다.
+
+### [Remove tasks]
+- 기본적으로 activity가 finish하면 document task는 Recents screen에서 자동으로 제거된다.
+- < activity > attribute, android:excludeFromRecents를 true로 하면 항상 Recents screen에서 제외될 수 있다.
+- < activity > attribute, android:maxRecents에 integer value를 지정하면 Recents screen에 나타낼 수 있는 app의 최대 task 개수를 지정할 수 있다.
+  - 기본 개수는 16개이다.
+  - 만약 maximum 개수에 도달하게 되면 가장 오래 전에 사용된 task부터 제거된다.
+  - maximum으로 지정할 수 있는 개수는 50개이다.(low memory device에서는 25개)
+  - 1개보다 적은 수는 invalid하다.
+#### Use the AppTask class to remove tasks
+```kotlin
+fun onRemoveFromOverview(view: View) {
+    // It is good pratice to remove a document from the overview stack if not needed anymore.
+    finishAndRemoveTask()
+}
+```
+- finishAndRemoveTask()를 호출해서 언제 task와 관련 activities를 remove하는지 정할 수 있다.
+#### Retain finished tasks
+```kotlin
+private fun newDocumentIntent() =
+        Intent(this, NewDocumentActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT or
+                    android.content.Intent.FLAG_ACTIVITY_RETAIN_IN_RECENTS)
+            putExtra(KEY_EXTRA_NEW_DOCUMENT_COUNTER, getAndIncrement())
+        }
+```
+- activity가 finished 됐어도 Recents screen에 task로 유지하고 싶으면 FLAG_ACTIVITY_RETAIN_IN_RECENTS flag를 사용한다.
+- android:autoRemoveFromRecents를 false로 두어도 같다.
+
+### [Enable recents URL sharing(Pixel only)]
+- Android 12 이상의 pixel에서는 Recents screen에서 직접 web link를 공유할 수 있다.
 
 ## Q&A
 <b id="f1">1) </b>onBackPressedDispatcher를 사용하라는 뜻일까?[↩](#r1)<br>
@@ -213,6 +277,8 @@ public class FormEntryFragment extends Fragment {
 - 물론 다시 같은 activity를 호출하게 되면 재사용된다.
 - 즉, singletask는 하나의 task에 activity instance는 무조건 한 개 있어야 한다는 것을 의미한다.
 - 이는 singleInstance도 같은 현상이 나타날 수 있다.
+
+
 <b id="f5">5) </b> marshalling, unmarshalling이란[↩](#r5)<br>
 - Serialization은 객체 데이터를 일련의 byte stream으로 변환하는 작업
 - Marshalling은 객체의 메모리 구조를 저장이나 전송을 위해 필요로 하는 자료 형태로 변환하는 작업
@@ -224,3 +290,19 @@ public class FormEntryFragment extends Fragment {
 - Binder transaction buffer는 1MB의 고정된 size를 가진다.
 - [TransactionTooLargeException](https://developer.android.com/reference/android/os/TransactionTooLargeException)
 
+<b id="f7">7) </b> FLAG_ACTIVITY_NEW_DOCUMENT와 FLAG_ACTIVITY_MUTIPLE_TASK의 차이[↩](#r7)<br>
+- NEW_DOCUMENT의 경우 이미 activity가 seperate task에 있다면 새롭게 생성되지 않고 존재하는 것을 onNewIntent()를 통해 사용한다.
+- MULTIPLE_TASK의 경우 이미 존재해도 항상 새로운 task를 만들어낸다.
+  - 단, NEW_TASK와 함께 사용할 경우에만 작동한다.
+- 둘다 back action에 대해서 이전 activity로 돌아간다.
+  - 단, NEW_DOCUMENT는 중복된 것은 task가 새롭게 생성되지 않기 때문에 중복 제외 호출된 순서대로 돌아간다.
+  - NEW_DOCUMENT의 경우 root activity로 new task가 생성되기 때문에 back action에 의해서 Recents screen에서 사라지지 않는다.
+  - NEW_TASK의 경우 root activity만 남는다.
+
+<b id="f8">8) </b> documentLaunchMode=intoExisting과 FLAG_ACTIVITY_NEW_DOCUMENT의 차이[↩](#r8)<br>
+- 기본적으로 Recents screen에 나타나는 구조는 같다.
+- back action 후 Recents screen에 남아있는 것이 다르다.
+  - intoExisting의 경우 생성된 task가 전부 Recents screen에 남아 있다.
+
+<b id="f9">9) </b>FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_DOCUMENT를 같이 사용[↩](#r9)<br>
+- FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_TASK를 같이 사용한 것과 같은 결과를 나타낸다.
