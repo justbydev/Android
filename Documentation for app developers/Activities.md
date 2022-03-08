@@ -393,6 +393,8 @@ class MyActivity : Activity() {
   - finish()에 의한 종료나 back button에 의한 수동 종료인 경우 호출되지 않는다.
   - system에 의해 configuration change, memory pressure에 의해 activity가 destroy된 경우 호출된다.
 - 만약 finish될 때 데이터를 저장하기 위해서는 persistent data로 저장해야 하고 이는 onStop()에서 행한다.
+
+
 <b id="f5">5) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r5)<br>
 <b id="f6">6) </b> Intent action에 해당하는 activity 중에서 보여주는/선택하는 과정은?[↩](#r6)<br>
 <b id="f7">7) </b> startActivityForResult()가 deprecated 됐다는데 이유와 대체 방법은?[↩](#r7)<br>
