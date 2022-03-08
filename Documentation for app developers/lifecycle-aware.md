@@ -116,10 +116,10 @@ class MyActivity : AppCompatActivity() {
 }
 ```
 #### Implementing a custom LifecycleOwner
-- Support Library 26.1.0 이후부터는 Fragments, Activities는 이미 LifecycleOwner를 implement한다.<sup id="r2">[2)](#f2)</sup>
+- Support Library 26.1.0 이후부터는 Fragments, Activities는 이미 LifecycleOwner를 implement한다.<sup id="r1">[1)](#f1)</sup>
   - Activities는 ComponentActivity가, Fragments는 Fragment가 LifecycleOwner를 implement
   - getLifecycle()에 대한 실제 구현도 되어 있다.
-  - LifecycleRegistry<sup id="r1">[1)](#f1)</sup>를 return
+  - LifecycleRegistry<sup id="r2">[2)](#f2)</sup>를 return
 - LifecycleOwner를 직접 구현한 custom class를 갖고 있다면 LifecycleRegistry class를 사용할 수 있다.
   - 단, 이 class에 event를 전달해야 한다.
 ```kotlin
@@ -520,8 +520,8 @@ class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
 
 ## Q&A
 #### [Lifecycle]
-<b id="f1">1) </b>Lifecycle class에 대한 구현체로 여러 observer를 handle할 수 있다. [↩](#r1)<br>
-<b id="f2">2) </b>그럼 이전 버전에서는 lifecycle을 어떻게 처리하고 observe 했을까? [↩](#r2)<br>
+<b id="f1">1) </b>그럼 이전 버전에서는 lifecycle을 어떻게 처리하고 observe 했을까? [↩](#r1)<br>
+<b id="f2">2) </b>Lifecycle class에 대한 구현체로 여러 observer를 handle할 수 있다. [↩](#r2)<br>
 <b id="f3">3) </b>Lifecycle/LifecycleOwner/LifecycleObserver/LifecycleRegistry 구성 정리 <br>
 #### [ViewModel]
 <b id="f4">4) </b>onCleared() 호출 과정
