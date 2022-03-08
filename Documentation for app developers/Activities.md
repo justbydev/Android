@@ -372,6 +372,158 @@ class MyActivity : Activity() {
 2) Activity B의 onCreate(), onStart(), onResume()가 순서대로 실행되고 이제 Activity B가 user focus를 가진다.
 3) Activity A가 더 이상 visible하지 않으면 onStop()이 실행된다. 
 
+## Handle Activity State Changes
+### [Configuration change occurs]
+- configuration change(rotation, language changes, etc)가 발생했을 때 activity는 destroy된 후 recreate된다.
+- onPause(), onStart(), onDestroy() 후에 새로운 activity instance가 생성되면서 onCreate(), onStart(), onResume()이 호출된다.
+#### Handle multi-window cases
+- API level 24 이상부터 가능한 multi-window mode에 진입하면 system은 configuration change되었다고 알리고 위와 같이 lifecycle이 변한다.
+- multi-window mode가 resize 되어도 같은 결과가 나타난다.
+- 2개의 app이 동시에 visible 해도 오직 하나만 focus를 얻고 foreground에서 user와 interact한다.
+  - focus를 얻은 activity는 Resumed state가 되고 다른 app은 Paused state가 된다.
+- 만약 focus하는 app을 바꾸게 된다면(app A to app B)
+  - app A에서는 onPause()가 호출되고 app B에서는 onResume()가 호출된다.
+
+### [Activity or dialog appears in foreground]
+- 만약 새로운 activity나 dialog가 foreground로 와서 focus를 가지고 진행 중인 activity를 부분적으로 가리면 가려진 activity는 focus를 잃고 Paused state가 되면서 onPause()를 호출한다.
+  - 가려진 activity가 다시 foreground로 오고 focus를 얻으면 onResume()이 호출된다.
+- 만약 새로운 activity나 dialog가 foreground로 와서 focus를 가지고 진행 중인 activity를 완전히 가리면 가려진 activity는 focus를 잃고 Stopped state가 되면서 system은 빠르게 onPause(), onStop()을 호출한다.
+  - 가려진 activity가 다시 foreground로 오고 focus를 얻으면 onRestart(), onStart(), onResume()이 호출된다.
+  - 만약 다시 foreground로 온 activity가 new instance라면 onRestart() 없이 onStart(), onResume()이 호출된다.
+  - 홈이나 최근 목록 버튼을 눌렀을 때도 system은 activity가 완전히 가려진 것처럼 처리한다.
+
+### [User presses or gestures Back]
+- 만약 Back을 하게 되면 onPause(), onStop(), onDestroy() 되고 destroy되면 back stack에서 사라진다.
+  - 만약 그 activity가 root launcher activity라면 Android version에 따라 다르게 처리한다.(Tasks and back stack에서 정리)
+- 이 상황에서는 onSaveInstanceState()가 호출되지 않는다.
+  - user가 다시 이 activity로 오지 않는다고 expect하기 때문이다.
+- onBackPressed()를 override할 수 있으며 이때 super.onBackPressed()를 호출하기를 권장한다.
+
+### [System kills app process]
+- 만약 app이 background에 있고 system이 foreground app을 위해 additional memory를 필요로 한다면 background app을 kill할 수 있다.
+
+## Test your activities
+- activity는 모든 user interaction을 처리하고 lifecycle event에 따라 제대로 된 반응을 하는 것이 중요하기 때문에 device-level events 동안 app's activities를 test하는 것이 중요하다.
+### [Drive an activity'sstate]
+- activities test에 있어 중요한 측면은 activities를 특정 state에 placing하는 것이다.
+- 여기서는 AndroidX Test library의 ActivityScenario를 사용한다.
+  - ActivityScenario는 local unit test와 on-device integration test 모두에서 사용할 수 있는 cross-platform API다.
+  - thread safety
+  - test의 instrumentation thread와 테스트 중인 activity를 실행하는 thread 간에 event를 동기화한다.
+#### Create an activity
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEvent() {
+       launchActivity<MyActivity>().use {
+       }
+    }
+}
+```
+- test 중인 activity는 다음과 같이 create한다.
+- create 후 ActivityScenario는 activity를 RESUMED state로 만든다.
+- 이와 같은 state에서는 activity의 View elements와 자유롭게 interact 할 수 있다.
+- test가 끝나면 close하는 것이 좋다.
+  - use extension을 사용하여 activity가 자동으로 close되도록 한다.
+- 다른 방법으로 ActivityScenarioRule를 사용하여 each test 전에 자동으로 ActivityScenario.launch하도록 할 수도 있다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @get:Rule var activityScenarioRule = activityScenarioRule<MyActivity>()
+
+    @Test fun testEvent() {
+        val scenario = activityScenarioRule.scenario
+    }
+}
+```
+#### Drive the activity to a new state
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEvent() {
+        launchActivity<MyActivity>().use { scenario ->
+            scenario.moveToState(State.CREATED)
+        }
+    }
+}
+```
+- moveToState()를 통해서 CREATED, STARTED 등 다른 state으로 이동할 수 있다.
+  - app이나 system에 의해 interrupt될 수 있기 때문에 각각 stopped, paused인 상황을 simulate한다.
+
+#### Determine the current activity state
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEvent() {
+        launchActivity<MyActivity>().use { scenario ->
+            scenario.onActivity { activity ->
+              startActivity(Intent(activity, MyOtherActivity::class.java))
+            }
+
+            val originalActivityState = scenario.state
+        }
+    }
+}
+```
+- test하고 있는 activity의 현재 상태를 결정하고 싶다면 ActivityScenario object의 state field 값을 받아온다.
+
+#### Recreate the activity
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEvent() {
+        launchActivity<MyActivity>().use { scenario ->
+            scenario.recreate()
+        }
+    }
+}
+```
+- system이 resource가 모자라 activity를 destroy하는 상황을 simulate하고 싶다면 recreate()를 사용한다.
+- ActivityScenario class는 @NonConfigurationInstance를 사용하여 activity의 saved instance state와 object는 유지한다.
+
+#### Retrieve activity results
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testResult() {
+        launchActivity<MyActivity>().use {
+            onView(withId(R.id.finish_button)).perform(click())
+
+            // Activity under test is now finished.
+
+            val resultCode = scenario.result.resultCode
+            val resultData = scenario.result.resultData
+        }
+    }
+}
+```
+- finished activity로부터 result code나 data를 받고 싶다면 ActivityScenario object의 result field를 사용한다.
+#### Trigger actions in the activity
+- ActivityScenario안에서의 모든 method는 blocking calls이기 때문에 instrumentation thread에서 실행해야 한다.
+- activity의 action을 trigger하려면 Espresso view matchers를 사용한다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEvent() {
+        launchActivity<MyActivity>().use {
+            onView(withId(R.id.refresh)).perform(click())
+        }
+    }
+}
+```
+- activity 자체에서 method를 호출해야 한다면 다음과 같이 ActivityAction을 구현한다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEvent() {
+        launchActivity<MyActivity>().use { scenario ->
+            scenario.onActivity { activity ->
+              activity.handleSwipeToRefresh()
+            }
+        }
+    }
+}
+
 
 
 ## Q&A
