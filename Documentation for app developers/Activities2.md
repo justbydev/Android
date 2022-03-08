@@ -113,6 +113,37 @@
     - 만약 singleTask, singleInstance를 사용하여 new task를 만들고 홈 버튼으로 나가게 되었다면 task는 background에 있고 invisible하게 되는데 ACTION_MAIN, CATEGORY_LAUNCHER를 지정하지 않았으면 task로 돌아갈 수 없게 된다.
 
 
+## Process and Application Lifecycle
+- 대부분의 Android application은 각자의 Linux process에서 작동한다.
+- Android의 특이한 특징은 application이 직접 스스로 application process의 lifetime을 control하지 않는다는 것이다.
+  - system이 실행 중인 것으로 판단되는 application 요소, 이 요소가 user에게 중요한 정도, overall memory를 조합하여 system에 의해 control된다.
+  - application developers는 application components들이 application's process lifetime에 어떻게 영향을 주는지 이해해야 한다.
+  - 그렇지 않으면 중요한 작업 도중 application's process가 killing될 수 있다.
+- memory가 부족할 때 어떤 process를 kill할 지는 Android가 각각의 process를 "important hierarchy"를 기준으로 정하게 된다.
+- foreground process
+  - user가 현재 사용하고 있는 process
+    - onResume()가 call되어 screen top에서 running 되어 user interaction이 일어나고 있는 Activity
+    - BroadcastReceiver.onReceive()가 실행되고 있는 BroadcastReceiver
+    - Service.onCreate(), Service.onStart(), Service.onDestroy() 중 하나가 실행되고 있는 Service
+  - 이런 process는 몇 개 없으며 정말 memory가 부족한 경우에만 kill된다.
+- visible process
+  - 작업이 이루어지고 있는 것을 user가 알고 있는 process로 kill하게 되면 user experience에 부정적인 영향을 주게 되는 process
+    - onPause()가 call되어 foreground에 있지는 않지만 visible한 Activity
+    - Service.startForeground()를 통해 실행된 foreground service
+    - 라이브 배경화면, 입력 방법 같이 user가 인지하는 특정 기능에 대해 system이 사용하고 있는 서비스
+  - foreground process보다는 낮지만 그래도 여전히 controll된다.
+  - 모든 foreground process가 계속 running되도록 하는 것을 필요로 하지 않는 이상 kill되지 않는다.
+- service process
+  - startService()로 시작한 Service
+  - user에게 직접적으로 visible하지는 않지만 user가 신경쓰고 있는 작업을 수행한다.
+  - 30분 이상 지속된 Service의 경우 cached list로 중요도를 낮추어 excessive resource를 사용하지 않도록 막는다.
+- cached process
+  - 현재 필요로 하지 않으며 원하면 언제나 system이 kill할 수 있는 process
+  - well running system은 여러 개의 cached process를 갖고 있고 보통 가장 오래된 것을 kill한다.
+  - onStop()가 호출되어 user에게 더 이상 visible하지 않는 Activity도 포함된다.
+    - kill된 후 다시 복구되면 user experience에 영향을 주지 않도록 saved state를 사용하여 복구한다.
+  - 이 process들은 list로 관리되며 정확한 순서는 구현 세부 사항이지만 다른 process보다 유용한 process를 유지하려고 한다.
+
 ## Q&A
 <b id="f1">1) </b>onBackPressedDispatcher를 사용하라는 뜻일까?[↩](#r1)<br>
 - OnBackPressedCallback abstract method인 handleOnBackPressed() 사용
@@ -142,6 +173,8 @@ public class FormEntryFragment extends Fragment {
 <b id="f2">2) </b>back button을 해도 root launcher activity는 finish되지 않는다면 destroy되지 않고 이전 상태를 그대로 유지하고 있다는 뜻인가? 그러면 destroy시키기 위해 finish()를 사용하는 것을 생각했는데 finishing 하지 말고 super.onBackPressed() 호출하도록 하라는 것은 root launcher activity를 destroy시키지 말라는 뜻일까?[↩](#r2)<br>
 <b id="f3">3) </b> 만약 A-B-C에서 B에 singletask를 했다면?[↩](#r3)<br>
 - B 위의 C가 destroy되고 B가 onNewIntent()로 실행되면서 A-B가 된다.
+
+
 <b id="f4">4) </b> 만약 singletask에서 taskAffinity가 없다면?[↩](#r4)<br>
 - affinity는 task name이며 따로 지정하지 않으면 package name을 사용한다.
 - affinity를 지정하지 않는다면 singletask여도 같은 task에 쌓이게 된다.
