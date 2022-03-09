@@ -524,6 +524,8 @@ class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
 <b id="f2">2) </b>Lifecycle class에 대한 구현체로 여러 observer를 handle할 수 있다. [↩](#r2)<br>
 - Lifecycle class를 extend했다.
 - custom LifecycleOwner를 사용할 때 직접 사용할 수 있다.
+
+
 <b id="f3">3) </b>Lifecycle/LifecycleOwner/LifecycleObserver/LifecycleRegistry 구성 정리 <br>
 #### [ViewModel]
 <b id="f4">4) </b>onCleared() 호출 과정
