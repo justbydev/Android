@@ -102,7 +102,7 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
      binding.textViewFragment.text = getString(string.hello_from_vb_bindfragment)
 }
 ```
-5) fragments와 view lifecycle이 있고 fragments는 views를 outlive하기 때문에 onDestroyView()에서 binding class instance를 clean up 한다.<sup id="r4">[4)](#f4)</sup>
+5) fragments와 view lifecycle이 있고 fragments는 views를 outlive하기 때문에 onDestroyView()에서 binding class instance를 clean up 한다.<sup id="r3">[3)](#f3)</sup>
 
 #### Provide hints for different configurations
 - 만약 여러 configurations에 대해 view들을 정의할 때 그에 따라 서로 다른 view를 사용할 수도 있다.(같은 ID를 가진)
@@ -171,7 +171,7 @@ public static ActivityAwesomeBinding bind(@NonNull View rootView) {
 
 #### Limitations compared to data binding
 - layout variables or layout expressions를 지원하지 않아 dynamic UI content를 XML layout file에 정의할 수 없다.
-- two-way data binding<sup id="r3">[3)](#f3)</sup>를 지원하지 않는다.
+- two-way data binding<sup id="r4">[4)](#f4)</sup>를 지원하지 않는다.
 
 
 
@@ -200,8 +200,13 @@ public void setContentView(int resId) {
 - Easy Mistake: Calling setContentView(…) with the layout resource id instead of the inflated binding object is an easy mistake to make. This causes the layout to be inflated twice and listeners to be installed on the wrong layout object. 
 - setContentView()는 view hierarchy를 inflate 시키고 activity content로 setting. [↩](#r2)<br>
 
-<b id="f3">3) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r3)<br>
-<b id="f4">4) </b> 
+<b id="f3">3) </b> onDestroyView()에서 _binding = null 한 이유[↩](#r3)<br>
+- Fragment view는 종료되고 Fragment는 남아있어 후에 재사용할 때 다른 view를 사용할 수 있다.
+  - Fragment가 남아있고 _binding = null 하지 않으면 _binding은 모든 inflated view에 대한 접근을 갖고 있게 되어 garbage collected되는 것을 막아 memory leak이 발생할 수 있다.
+
+
+<b id="f4">4) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r4)<br>
+
 
 
 
