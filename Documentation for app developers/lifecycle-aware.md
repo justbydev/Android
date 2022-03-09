@@ -524,7 +524,9 @@ class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
 <b id="f2">2) </b>Lifecycle class에 대한 구현체로 여러 observer를 handle할 수 있다. [↩](#r2)<br>
 - Lifecycle class를 extend했다.
 - custom LifecycleOwner를 사용할 때 직접 사용할 수 있다.
-
+- LifecycleOwner에 getLifecycle()이 있고 getLifecycle()를 통해 Lifecycleregistry를 얻는다.
+  - Lifecycleregistry에 실제 구현되어 있는 addObserver에 observer를 register하여 여러 observer가 lifecycle를 observe할 수 있도로 할 수 있다.
+  - LifecycleRegistry.java에는 "An implementation of Lifecycle that can handle multiple observers" 라고 되어 있다.
 
 <b id="f3">3) </b>Lifecycle/LifecycleOwner/LifecycleObserver/LifecycleRegistry 구성 정리 <br>
 #### [ViewModel]
