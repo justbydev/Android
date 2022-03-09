@@ -250,6 +250,135 @@ class TempFileViewModel extends ViewModel {
 }
 ```
 
+## Use Kotlin coroutines with lifecycle-aware components
+### [Add KTX dependencies]
+- ViewModelScope 사용 위해서 androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0 혹은 그 이상 버전 사용
+- LifecycleScope 사용 위해서  androidx.lifecycle:lifecycle-runtime-ktx:2.4.0 혹은 그 이상 버전 사용
+- liveData 사용 위해서 androidx.lifecycle:lifecycle-livedata-ktx:2.4.0 혹은 그 이상 버전 사용
+
+### [Lifecycle-aware coroutine scopes]
+#### ViewModelScope
+```kotlin
+class MyViewModel: ViewModel() {
+    init {
+        viewModelScope.launch {
+            // Coroutine that will be canceled when the ViewModel is cleared.
+        }
+    }
+}
+```
+- ViewModel안에 정의하며 ViewModel이 clear되면 자동으로 cancel된다.
+- ViewModel이 active할 때만 동작하는 Coroutines을 사용할 때 유용하다.
+
+#### LifecycleScope
+```kotlin
+class MyFragment: Fragment() {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewLifecycleOwner.lifecycleScope.launch {
+            val params = TextViewCompat.getTextMetricsParams(textView)
+            val precomputedText = withContext(Dispatchers.Default) {
+                PrecomputedTextCompat.create(longTextContent, params)
+            }
+            TextViewCompat.setPrecomputedText(textView, precomputedText)
+        }
+    }
+}
+```
+- Lifecycle object 안에서 정의하며 Lifecycle이 destroy되면 자동을 cancel된다.
+- Lifecycle이 CoroutineScope는 lifecycle.coroutineScope or lifecycleOwner.lifecycleScope를 통해 접근할 수 있다.
+### [Restarable Lifecycle-aware coroutines]
+```kotlin
+class MyFragment : Fragment() {
+
+    val viewModel: MyViewModel by viewModel()
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Create a new coroutine in the lifecycleScope
+        viewLifecycleOwner.lifecycleScope.launch {
+            // repeatOnLifecycle launches the block in a new coroutine every time the
+            // lifecycle is in the STARTED state (or above) and cancels it when it's STOPPED.
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Trigger the flow and start listening for values.
+                // This happens when lifecycle is STARTED and stops
+                // collecting when the lifecycle is STOPPED
+                viewModel.someDataFlow.collect {
+                    // Process item
+                }
+            }
+        }
+    }
+}
+```
+- lifecycleScope가 Lifecycle이 DESTROYED되면 자동으로 끝나지만 특정 state에서 시작되고 다른 state가 되면 끝나는 작업을 원할 수도 있다.
+- Lifecycle과 LifecycleOwner가 repeatOnLifecycle API를 제공한다.
+- 특정 state가 되면 항상 run 되고 벗어나게 되면 cancel된다.
+### [Suspend Lifecycle-aware coroutines]
+```kotlin
+class MyFragment: Fragment {
+    init { // Notice that we can safely launch in the constructor of the Fragment.
+        lifecycleScope.launch {
+            whenStarted {
+                // The block inside will run only when Lifecycle is at least STARTED.
+                // It will start executing when fragment is started and
+                // can call other suspend methods.
+                loadingView.visibility = View.VISIBLE
+                val canAccess = withContext(Dispatchers.IO) {
+                    checkUserAccess()
+                }
+
+                // When checkUserAccess returns, the next line is automatically
+                // suspended if the Lifecycle is not *at least* STARTED.
+                // We could safely run fragment transactions because we know the
+                // code won't run unless the lifecycle is at least STARTED.
+                loadingView.visibility = View.GONE
+                if (canAccess == false) {
+                    findNavController().popBackStack()
+                } else {
+                    showContent()
+                }
+            }
+
+            // This line runs only after the whenStarted block above has completed.
+
+        }
+    }
+}
+```
+- Lifecycle이 특정 state에 있지 않다면 code block 실행을 suspend하고 싶을 때 lifecycle.whenCreated, lifecycle.whenStarted, lifecycle.whenResumed method를 사용할 수 있다.
+```kotlin
+class MyFragment: Fragment {
+    init {
+        lifecycleScope.launchWhenStarted {
+            try {
+                // Call some suspend functions.
+            } finally {
+                // This line might execute after Lifecycle is DESTROYED.
+                if (lifecycle.state >= STARTED) {
+                    // Here, since we've checked, it is safe to run any
+                    // Fragment transactions.
+                }
+            }
+        }
+    }
+}
+```
+- Even though these methods provide convenience when working with Lifecycle, you should use them only when the information is valid within the scope of the Lifecycle (precomputed text, for example). Keep in mind that if the activity restarts, the coroutine is not restarted.
+- Warning: Prefer collecting flows using the repeatOnLifecycle API instead of collecting inside the launchWhenX APIs. As the latter APIs suspend the coroutine instead of cancelling it when the Lifecycle is STOPPED, upstream flows are kept active in the background, potentially emitting new items and wasting resources.
+### [Use coroutines with LiveData]
+```kotlin
+val user: LiveData<User> = liveData {
+    val data = database.loadUser() // loadUser is a suspend function.
+    emit(data)
+}
+```
+- liveData building block 내에 suspend function을 사용하면 LiveData가 active하면 시작되고 LiveData가 inactive하면 자동으로 cancel된다.
+- 만약 작업이 다 끝나지 않았는데 cancel되었다면 LiveData가 다시 active하게 되면 재시작하게 된다.
+  - 이후 성공적으로 마무리하면 재시작하지 않는다.
+  - 하지만 자동으로 cancel되었을 때만 재시작하며 CancellationException과 같이 다른 이유로 cancel되었다면 재시작하지 않는다.
+
 ## Q&A
 #### [Save UI states]
 <b id="f1">1) </b>ViewModel, Saved instance state의 data limitations은 정확히 어느 정도인가? [↩](#r1)<br>
