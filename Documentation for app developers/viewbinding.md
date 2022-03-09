@@ -203,7 +203,7 @@ public void setContentView(int resId) {
 <b id="f3">3) </b> onDestroyView()에서 _binding = null 한 이유[↩](#r3)<br>
 - Fragment view는 종료되고 Fragment는 남아있어 후에 재사용할 때 다른 view를 사용할 수 있다.
   - Fragment가 남아있고 _binding = null 하지 않으면 _binding은 모든 inflated view에 대한 접근을 갖고 있게 되어 garbage collected되는 것을 막아 memory leak이 발생할 수 있다.
-
+- 그렇다면 왜 private var _binding, private val binding 2개의 property를 사용했을까?
 
 <b id="f4">4) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r4)<br>
 
