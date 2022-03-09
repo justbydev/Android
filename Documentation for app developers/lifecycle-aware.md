@@ -475,7 +475,7 @@ val user = Transformations.switchMap(userId) { id -> getUser(id) }
 ```
 - 다른 LiveData의 변화를 감지하게 된다.
 - switchMap의 경우 map과 달리 람다함수가 LiveData object를 return한다.
-- transformation method를 사용하여 observer's lifecycle 전반에 걸쳐 정보를 전달할 수 있다.
+- transformation method를 사용하여 observer's lifecycle 전반에 걸쳐 정보를 전달할 수 있다.<sup id="r9">[9)](#f9)</sup>
 - return된 LiveData object를 observe하지 않다면 transformations은 calculate되지 않는다.
   - transformations은 늦게 calculate되기 때문에 lifecycle-related behavior는 implicitly하게 pass down된다.
 
@@ -490,7 +490,7 @@ class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
 }
 ```
 - 위와 같이 작성하면 UI component가 address를 받을 때마다 postal code를 return하게 된다.
-  - getPostalCode()를 호출할 때마다 이전 LiveData object를 unregister하고 새로운 LiveData object를 register한다.
+  - getPostalCode()를 호출할 때마다 이전 LiveData object를 unregister하고 새로운 LiveData object를 register한다.<sup id="r10">[10)](#f10)</sup>
 ```kotlin
 class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
     private val addressInput = MutableLiveData<String>()
@@ -615,3 +615,9 @@ class LifecycleBoundObserver extends ObserverWrapper implements LifecycleEventOb
 }
 ```
 <b id="f8">8) </b>LiveData는 항상 UI를 처리하기 위해 사용하기에 mainthread에서 값을 처리하도록 하는 것일까? 다른 용도는 없을까? [↩](#r8)<br>
+<b id="f9">9) </b>getPostalCode(address).observe() 이런 형식을 사용해서 호출될 때마다 이전 것을 unregister하고 새로운 것을 register 한다는 뜻일까? [↩](#r9)<br>
+<b id="f10">10) </b> transformations LiveData 부분 [↩](#r10)<br>
+- You can use transformation methods to carry information across the observer's lifecycle. The transformations aren't calculated unless an observer is watching the returned LiveData object. Because the transformations are calculated lazily, lifecycle-related behavior is implicitly passed down without requiring additional explicit calls or dependencies.
+
+
+
