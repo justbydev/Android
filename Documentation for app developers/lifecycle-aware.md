@@ -118,7 +118,7 @@ class MyActivity : AppCompatActivity() {
 #### Implementing a custom LifecycleOwner
 - Support Library 26.1.0 이후부터는 Fragments, Activities는 이미 LifecycleOwner를 implement한다.<sup id="r1">[1)](#f1)</sup>
   - Activities는 ComponentActivity가, Fragments는 Fragment가 LifecycleOwner를 implement
-  - getLifecycle()에 대한 실제 구현도 되어 있다.
+  - getLifecycle()에 대한 실제 구현도 되어 있고 Lifecycle instance를 얻을 수 있다.
   - LifecycleRegistry<sup id="r2">[2)](#f2)</sup>를 return
 - LifecycleOwner를 직접 implement한 custom class를 갖고 있다면 LifecycleRegistry class를 사용할 수 있다.
   - 단, 이 class에 event를 전달해야 한다.
