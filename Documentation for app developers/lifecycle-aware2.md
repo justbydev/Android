@@ -382,6 +382,11 @@ val user: LiveData<User> = liveData {
 ## Q&A
 #### [Save UI states]
 <b id="f1">1) </b>ViewModel, Saved instance state의 data limitations은 정확히 어느 정도인가? [↩](#r1)<br>
+- Saved instance state의 경우 parcelable한 Bundle를 사용하는데 Binder transaction buffer를 사용하고 1MB의 size limit를 가진다.
+  - 이는 saved instance state, startactivity, system interaction까지 포함되는 것이기에 50K까지만 권장한다.
+- ViewModel은?
+
+
 <b id="f2">2) </b>configuration change 발생해도 기존 ViewModel이 새로운 activity instance와 연결되는 이유는? [↩](#r2)<br>
 - activity event가 ON_DESTROY이지만 configuration change에 의한 것이라면 ViewModelStore가 clear되지 않는다.
 - onCreate()에서 ViewModelProvider(ViewModelStoreOwner).get()에 의해 ViewModel을 갖고 온다.
