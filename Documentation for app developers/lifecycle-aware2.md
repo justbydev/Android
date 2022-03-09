@@ -395,6 +395,9 @@ val user: LiveData<User> = liveData {
 - 따라서 기존 ViewModel이 새로운 activity instance와 연결된다.
 
 <b id="f3">3) </b>Serialization이란? [↩](#r3)<br>
+- 자바 내부 시스템에서 사용하는 객체를 바이트 형태 데이터로 변환해서 자바 외부 시스템에서 사용할 수 있도록 하는 것
+
+
 <b id="f4">4) </b> SavedStateProvider를 등록하고 SavedStateRegistry를 통해 saved state를 consume했기에 onSavedInstanceState, onRestoreInstanceState도 작동하는 것인가?[↩](#r4)<br>
 ```kotlin
 getSavedStateRegistry().registerSavedStateProvider(ACTIVITY_RESULT_TAG,
