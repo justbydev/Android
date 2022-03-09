@@ -15,7 +15,7 @@
 - activities들은 일관된 user experience 형성을 위해 함께 작동하지만 각 activity는 다른 activity와 loosely bound되어 있다.
   - 다른 activities들과 최소의 종속성을 가진다.
   - 실제로 activities들은 종종 다른 app의 activities를 시작한다.
-- activities를 상요하려면 manifest에 등록해야 하고 반드시 activity lifecycles를 제대로 관리해야 한다.
+- activities를 사용하려면 manifest에 등록해야 하고 반드시 activity lifecycles를 제대로 관리해야 한다.
 
 ### [Configuring the manifest]
 #### Declare activities
