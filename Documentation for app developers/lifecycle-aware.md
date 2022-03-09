@@ -120,7 +120,7 @@ class MyActivity : AppCompatActivity() {
   - Activities는 ComponentActivity가, Fragments는 Fragment가 LifecycleOwner를 implement
   - getLifecycle()에 대한 실제 구현도 되어 있다.
   - LifecycleRegistry<sup id="r2">[2)](#f2)</sup>를 return
-- LifecycleOwner를 직접 구현한 custom class를 갖고 있다면 LifecycleRegistry class를 사용할 수 있다.
+- LifecycleOwner를 직접 implement한 custom class를 갖고 있다면 LifecycleRegistry class를 사용할 수 있다.
   - 단, 이 class에 event를 전달해야 한다.
 ```kotlin
 class MyActivity : Activity(), LifecycleOwner {
