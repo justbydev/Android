@@ -178,7 +178,7 @@ class CameraComponent : LifecycleObserver {
     - 하지만 이런 경우 activity가 Paused일 때는 camera가 다른 Resumed 상태인 app에서 access가 거부될 수 있기 때문에 전체적인 user experience를 감소시킬 수 있다.
 - 어떤 event에서 initialization operation을 하든 corresponding한 lifecycle event에서 resource를 해제해야 한다.
   - 만약 ON_START event 후에 initialize했다면 ON_STOP event 후에 해제해야 한다.
-  - 만약 ON_RESUME event 후에 initialize했다면 ON_PAUSE event 후에 해제해야 한다.
+  - 만약 ON_RESUME event 후에 initialize했다면 ON_PAUSE event 후에 해제해야 한다.<sup id="r4">[4)](#f4)</sup>
 
 #### onPause()
 - user가 처음 activity를 벗어난 것을 인식했을 때 system이 호출한다.(벗어난 것이 항상 destroy됐다는 것은 아니다.)
@@ -276,7 +276,7 @@ companion object {
     val STATE_LEVEL = "playerLevel"
 }
 ```
-- activity가 멈추기 시작하면 onSaveInstanceState()<sup id="r4">[4)](#f4)</sup>가 호출되어 instance state bundle에 state information을 저장한다.
+- activity가 멈추기 시작하면 onSaveInstanceState()<sup id="r5">[5)](#f5)</sup>가 호출되어 instance state bundle에 state information을 저장한다.
   - 기본적으로 activity's view hierarchy state를 저장한다.
 - 예상치 못하게 activity가 destroy된 경우 onSaveInstanceState()를 override하여 필요한 데이터를 Bundle object를 사용하여 저장한다.
   - override 할 때 view hierarchy state 저장을 위해 superclass implementation을 call해야 한다.
@@ -287,7 +287,7 @@ companion object {
   - 둘은 같은 Bundle을 받게 된다.
 - onCreate()가 new instance, recreate 두 상황에서 모두 호출되어 Bundle을 받기 때문에 null 체크를 해줘야 한다.
 - onRestoreInstanceState()를 사용할 수도 있다.
-  - onStart() 다음에 system이 호출한다.<sup id="r5">[5)](#f5)</sup>
+  - onStart() 다음에 system이 호출한다.<sup id="r6">[6)](#f6)</sup>
   - 복구할 saved state가 있는 경우에만 호출하기 때문에 Bundle이 null인지 체크할 필요가 없다.
 ```kotlin
 override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
@@ -325,7 +325,7 @@ startActivity(intent)
 - app이 email sending, status update와 같은 다른 action을 필요로 할 수도 있다.
   - 이런 경우 이런 action을 수행할 activities를 직접 가지기 보다는 다른 app에서 제공하는 activities를 사용할 수 있다.
   - 이때, Intent를 사용하여 수행하고자 하는 action을 정의하고 system이 action에 맞는 다른 app의 activity를 launch한다.
-  - 만약 해당하는 activity가 여러개라면 user가 선택할 수 있다.<sup id="r6">[6)](#f6)</sup>
+  - 만약 해당하는 activity가 여러개라면 user가 선택할 수 있다.<sup id="r7">[7)](#f7)</sup>
 
 #### startActivityForResult()
 ```kotlin
@@ -357,7 +357,7 @@ class MyActivity : Activity() {
     }
 }
 ```
-- 다른 activity가 끝날 때 결과를 받고 싶은 경우 startActivityForResult(Intent, int)를 사용할 수 있다.<sup id="r7">[7)](#f7)</sup>
+- 다른 activity가 끝날 때 결과를 받고 싶은 경우 startActivityForResult(Intent, int)를 사용할 수 있다.<sup id="r8">[8)](#f8)</sup>
   - Integer의 경우 call를 구별해주는 request code
   - result는 onActivityResult(int, int, Intent)를 통해 받게 된다.
 - child activity는 exit할 때 setResult(int)를 호출하게 된다.
@@ -540,16 +540,22 @@ class MyTestSuite {
 
 <b id="f2">2) </b> 각각의 activity에 permission하면 uses-permission에도 똑같이 지정해야 한다고 하는데 그러면 굳이 activity마다 permission을 지정할 필요가 있을까?[↩](#r2)<br>
 <b id="f3">3) </b>Paused state라고 되어 있는데 Lifecycle 에서 state 중에 Paused는 없었는데 그냥 onPause()이기에 Paused state라고 한 것일까?[↩](#r3)<br>
-<b id="f4">4) </b> onSaveInstanceState() 호출되는 경우와 호출되지 않는 경우는? [↩](#r4)<br>
+<b id="f4">4) </b> onCreate()와 onDestroy(), onStart()와 onStop(), onResume()과 onPause() 이렇게 짝을 맞춰서 코드를 작성해야 한다.[↩](#r4)<br>
+- 예를 들어 동영상 관련하여 onStart()에서 재생하고 onPause()에서 멈췄다고 하자.
+- multi-window mode에서는 onPause()에서 동영상을 멈춘다.
+  - 하지만 focus를 얻을 때 onResume()만 호출되기 때문에 동영상이 다시 재생이 되지 않는다.
+
+
+<b id="f5">5) </b> onSaveInstanceState() 호출되는 경우와 호출되지 않는 경우는? [↩](#r5)<br>
 - activity가 finish되어 완전히 destroy되어 user가 다시 돌아온다고 여겨지지 않는 경우 호출되지 않는다.
   - finish()에 의한 종료나 back button에 의한 수동 종료인 경우 호출되지 않는다.
   - system에 의해 configuration change, memory pressure에 의해 activity가 destroy된 경우 호출된다.
 - 만약 finish될 때 데이터를 저장하기 위해서는 persistent data로 저장해야 하고 이는 onStop()에서 행한다.
 
 
-<b id="f5">5) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r5)<br>
-<b id="f6">6) </b> Intent action에 해당하는 activity 중에서 보여주는/선택하는 과정은?[↩](#r6)<br>
-<b id="f7">7) </b> startActivityForResult()가 deprecated 됐다는데 이유와 대체 방법은?[↩](#r7)<br>
+<b id="f6">6) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r6)<br>
+<b id="f7">7) </b> Intent action에 해당하는 activity 중에서 보여주는/선택하는 과정은?[↩](#r7)<br>
+<b id="f8">8) </b> startActivityForResult()가 deprecated 됐다는데 이유와 대체 방법은?[↩](#r8)<br>
 
 
 
