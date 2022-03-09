@@ -554,7 +554,33 @@ class MyTestSuite {
 
 
 <b id="f6">6) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r6)<br>
-<b id="f7">7) </b> Intent action에 해당하는 activity 중에서 보여주는/선택하는 과정은?[↩](#r7)<br>
+<b id="f7">7) </b> Intent action에 해당하는 activity 중에서 해당하는 것이 없다면? 선택되는 과정은?[↩](#r7)<br>
+- implicit intent를 사용할 때 처리할 app이 전혀 없을 수도 있다.
+  - 전혀 없다면 app은 다운되기 때문에 resolveActivity()를 호출해서 처리하 수 있다.
+  - null인지 체크해서 null이 아니라면 startActivity()를 해도 안전하다느 뜻이고 null이라면 비활성화 해야 한다.
+```kotlin
+// Create the text message with a string
+val sendIntent = Intent().apply {
+    action = Intent.ACTION_SEND
+    putExtra(Intent.EXTRA_TEXT, textMessage)
+    type = "text/plain"
+}
+
+// Verify that the intent will resolve to an activity
+if (sendIntent.resolveActivity(packageManager) != null) {
+    startActivity(sendIntent)
+}
+```
+- ActivityManager는 PackageManager에게 resolveActivity API를 호출하여 가장 적합한 activity가 무엇인지 물어보는데 이 과정이 resolving
+  - intent filter의 action, category, data에 의해 결정
+  - action은 반드시 1개만 존재해야 하며 같은 action인 것을 filtering
+  - implicit intent를 위해서는 반드시 category.DEFAULT를 포함해야 하고 intent filter에 지정한 category를 모두 갖고 있는 것을 filtering
+  - data는 서로 완벽하게 일치해야 한다.
+  - 이와 같은 과정으로 resolving해서 맞는 app을 보여주게 된다.
+
+- [Intent and Intent filters](https://developer.android.com/guide/components/intents-filters#Receiving)
+
+
 <b id="f8">8) </b> startActivityForResult()가 deprecated 됐다는데 이유와 대체 방법은?[↩](#r8)<br>
 
 
