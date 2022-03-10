@@ -357,7 +357,7 @@ class MyActivity : Activity() {
     }
 }
 ```
-- 다른 activity가 끝날 때 결과를 받고 싶은 경우 startActivityForResult(Intent, int)를 사용할 수 있다.<sup id="r8">[8)](#f8)</sup>
+- 다른 activity가 끝날 때 결과를 받고 싶은 경우 startActivityForResult(Intent, int)를 사용할 수 있다.
   - Integer의 경우 call를 구별해주는 request code
   - result는 onActivityResult(int, int, Intent)를 통해 받게 된다.
 - child activity는 exit할 때 setResult(int)를 호출하게 된다.
@@ -554,9 +554,11 @@ class MyTestSuite {
 
 
 <b id="f6">6) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r6)<br>
+- API Level 28 이전에는 onStop() 이전에 호출되고 이후에는 onStop() 다음에 호출된다.
+
 <b id="f7">7) </b> Intent action에 해당하는 activity 중에서 해당하는 것이 없다면? 선택되는 과정은?[↩](#r7)<br>
 - implicit intent를 사용할 때 처리할 app이 전혀 없을 수도 있다.
-  - 전혀 없다면 app은 다운되기 때문에 resolveActivity()를 호출해서 처리하 수 있다.
+  - 전혀 없다면 app은 다운되기 때문에 resolveActivity()를 호출해서 처리할 수 있다.
   - null인지 체크해서 null이 아니라면 startActivity()를 해도 안전하다느 뜻이고 null이라면 비활성화 해야 한다.
 ```kotlin
 // Create the text message with a string
@@ -580,8 +582,6 @@ if (sendIntent.resolveActivity(packageManager) != null) {
 
 - [Intent and Intent filters](https://developer.android.com/guide/components/intents-filters#Receiving)
 
-
-<b id="f8">8) </b> startActivityForResult()가 deprecated 됐다는데 이유와 대체 방법은?[↩](#r8)<br>
 
 
 
