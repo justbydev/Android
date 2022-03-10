@@ -211,7 +211,9 @@ startActivity(intent)
 
 ### [Remove tasks]
 - 기본적으로 activity가 finish하면 document task는 Recents screen에서 자동으로 제거된다.
+  - root activity는 남아있다.
 - < activity > attribute, android:excludeFromRecents를 true로 하면 항상 Recents screen에서 제외될 수 있다.
+  - root activity에서 하면 역시 Recents screen에서 제외된다.
 - < activity > attribute, android:maxRecents에 integer value를 지정하면 Recents screen에 나타낼 수 있는 app의 최대 task 개수를 지정할 수 있다.
   - 기본 개수는 16개이다.
   - 만약 maximum 개수에 도달하게 되면 가장 오래 전에 사용된 task부터 제거된다.
