@@ -294,6 +294,23 @@ public class FormEntryFragment extends Fragment {
 ```
 
 <b id="f2">2) </b>back button을 해도 root launcher activity는 finish되지 않는다면 destroy되지 않고 이전 상태를 그대로 유지하고 있다는 뜻인가? 그러면 destroy시키기 위해 finish()를 사용하는 것을 생각했는데 finishing 하지 말고 super.onBackPressed() 호출하도록 하라는 것은 root launcher activity를 destroy시키지 말라는 뜻일까?[↩](#r2)<br>
+- However, if your app overrides onBackPressed() to handle Back navigation and finish the activity, update your implementation to call through to super.onBackPressed() instead of finishing
+```kotlin
+override fun onBackPressed() {
+    onBackPressedDispatcher.addCallback {
+        finish()
+    }
+    super.onBackPressed()
+}
+```
+```kotlin
+override fun onBackPressed() {
+    finish()
+    super.onBackPressed()
+}
+```
+
+
 <b id="f3">3) </b> 만약 A-B-C에서 B에 singletask를 했다면?[↩](#r3)<br>
 - B 위의 C가 destroy되고 B가 onNewIntent()로 실행되면서 A-B가 된다.
 
