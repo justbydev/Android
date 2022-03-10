@@ -372,7 +372,7 @@ class NameActivity : AppCompatActivity() {
 #### Update LiveData objects
 - LiveData는 stored data를 update하는 method가 없고 MutableLiveData class를 사용해야 한다.
   - 보통 MutableLiveData는 ViewModel에서 사용하고 immutable LiveData를 observer에게 expose한다.
-- setValue(T), postValue(T)를 사용한다.
+- setValue(T), postValue(T)를 사용한다.<sup id="r8">[8)](#f8)</sup>
   - setValue(T)는 main thread에서, postValue(T)는 worker thread에서 사용한다.
   - update하면 observer가 onChanged() method를 call한다.
 
@@ -391,7 +391,7 @@ class NameActivity : AppCompatActivity() {
 - LiveData를 data layer classes에서 hold하지 않아야 한다.
   - LiveData는 비동기 데이터 흐름을 handle하기 위해 design되지 않았다.
   - data stream을 combine할 능력이 제한적이다.
-  - 모든 LiveData objects는 main thread에서 observe 된다.<sup id="r8">[8)](#f8)</sup>
+  - 모든 LiveData objects는 main thread에서 observe 된다.<sup id="r9">[9)](#f9)</sup>
   - 만약 ViewModel class가 아닌 다른 layer에서 사용하고 싶다면 Kotlin Flows를 사용하고 ViewModel에서 asLiveData()를 사용하여 변환하는 것을 고려하자.
 
 ### [Extend LiveData]
@@ -475,7 +475,7 @@ val user = Transformations.switchMap(userId) { id -> getUser(id) }
 ```
 - 다른 LiveData의 변화를 감지하게 된다.
 - switchMap의 경우 map과 달리 람다함수가 LiveData object를 return한다.
-- transformation method를 사용하여 observer's lifecycle 전반에 걸쳐 정보를 전달할 수 있다.<sup id="r9">[9)](#f9)</sup>
+- transformation method를 사용하여 observer's lifecycle 전반에 걸쳐 정보를 전달할 수 있다.<sup id="r10">[10)](#f10)</sup>
 - return된 LiveData object를 observe하지 않다면 transformations은 calculate되지 않는다.
   - transformations은 늦게 calculate되기 때문에 lifecycle-related behavior는 implicitly하게 pass down된다.
 
@@ -490,7 +490,7 @@ class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
 }
 ```
 - 위와 같이 작성하면 UI component가 address를 받을 때마다 postal code를 return하게 된다.
-  - getPostalCode()를 호출할 때마다 이전 LiveData object를 unregister하고 새로운 LiveData object를 register한다.<sup id="r10">[10)](#f10)</sup>
+  - getPostalCode()를 호출할 때마다 이전 LiveData object를 unregister하고 새로운 LiveData object를 register한다.<sup id="r11">[11)](#f11)</sup>
 ```kotlin
 class MyViewModel(private val repository: PostalCodeRepository) : ViewModel() {
     private val addressInput = MutableLiveData<String>()
@@ -614,12 +614,56 @@ class LifecycleBoundObserver extends ObserverWrapper implements LifecycleEventOb
     }
 }
 ```
-<b id="f8">8) </b>LiveData는 항상 UI를 처리하기 위해 사용하기에 mainthread에서 값을 처리하도록 하는 것일까? 다른 용도는 없을까? [↩](#r8)<br>
 
-<b id="f9">9) </b> transformations LiveData 부분 [↩](#r9)<br>
+<b id="f8">8) </b>setValue(), postValue() [↩](#r8)<br>
+- setValue()는 main thread에서, postValue()는 worker thread에서 사용한다.
+- setValue()를 worker thread에서 사용하면 assertMainThread("setValue")오류가 발생한다.
+```kotlin
+@MainThread
+protected void setValue(T value) {
+    assertMainThread("setValue");
+    mVersion++;
+    mData = value;
+    dispatchingValue(null);
+}
+```
+- postValue()는 background thread에서 동작하다가 mainthread에서 setValue()를 통해 값을 변경한다.
+```kotlin
+protected void postValue(T value) {
+    boolean postTask;
+    synchronized (mDataLock) {
+        postTask = mPendingData == NOT_SET;
+        mPendingData = value;
+    }
+    if (!postTask) {
+        return;
+    }
+    ArchTaskExecutor.getInstance().postToMainThread(mPostValueRunnable);
+}
+```
+```kotlin
+private final Runnable mPostValueRunnable = new Runnable() {
+    @SuppressWarnings("unchecked")
+    @Override
+    public void run() {
+        Object newValue;
+        synchronized (mDataLock) {
+            newValue = mPendingData;
+            mPendingData = NOT_SET;
+        }
+        setValue((T) newValue);
+    }
+};
+```
+- postValue()는 background thread에서 동작하다가 mainthread에서 handler 통해 값을 post하기 때문에 mainthread에서 getValue()하면 값을 바로 갖고 오지 못한다.
+
+
+<b id="f9">9) </b>LiveData는 항상 UI를 처리하기 위해 사용하기에 mainthread에서 값을 처리하도록 하는 것일까? 다른 용도는 없을까? [↩](#r9)<br>
+
+<b id="f10">9) </b> transformations LiveData 부분 [↩](#r10)<br>
 - You can use transformation methods to carry information across the observer's lifecycle. The transformations aren't calculated unless an observer is watching the returned LiveData object. Because the transformations are calculated lazily, lifecycle-related behavior is implicitly passed down without requiring additional explicit calls or dependencies.
 
-<b id="f10">10) </b>getPostalCode(address).observe() 이런 형식을 사용해서 호출될 때마다 이전 것을 unregister하고 새로운 것을 register 한다는 뜻일까? [↩](#r10)<br>
+<b id="f11">11) </b>getPostalCode(address).observe() 이런 형식을 사용해서 호출될 때마다 이전 것을 unregister하고 새로운 것을 register 한다는 뜻일까? [↩](#r11)<br>
 
 
 
