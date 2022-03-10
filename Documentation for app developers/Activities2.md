@@ -353,6 +353,7 @@ override fun onBackPressed() {
 - 기본적으로 Recents screen에 나타나는 구조는 같다.
 - back action 후 Recents screen에 남아있는 것이 다르다.
   - intoExisting의 경우 생성된 task가 전부 Recents screen에 남아 있다.
+  - FLAG_ACTIVITY_NEW_DOCUMENT는 root actgivity만 Recents screen에 남아 있다.
 
 <b id="f9">9) </b>FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_DOCUMENT를 같이 사용[↩](#r9)<br>
 - FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_TASK를 같이 사용한 것과 같은 결과를 나타낸다.
