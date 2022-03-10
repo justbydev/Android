@@ -198,6 +198,7 @@ startActivity(intent)
 - intoExisting<sup id="r8">[8)](#f8)</sup>
   - 이미 존재하는 task를 재사용한다.
   - FLAG_ACTIVITY_MULTIPLE_TASK를 세팅하지 않은 FLAG_ACTIVITY_NEW_DOCUMENT와 같다.
+    - 새로운 activity instance의 경우 new document를 생성하지만 같은 instance의 경우 이미 존재하는 task를 사용한다.
 - always
   - document가 open되어 있어도 항상 new task를 만든다.
   - FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_DOCUMENT를 같이 사용한 것과 같다.<sup id="r9">[9)](#f9)</sup>
