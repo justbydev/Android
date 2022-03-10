@@ -38,12 +38,13 @@
 
 ### [Use onSaveInstanceState() as backup to handle system-initiated process death]
 - Saved instance state는 configuration change, process death에서도 유지되지만 storage, speed limitation이 있다.
-  - 왜냐하면 disk에 data가 serialize되기 때문이다.
+  - 왜냐하면 onSaveInstanceState()는 disk에 data가 serialize되기 때문이다.
   - serialization<sup id="r3">[3)](#f3)</sup>은 objects being serialized가 복잡하면 많은 메모리를 사용한다.
   - configuration change동안 serialization이 main thread에서 발생하면 프레임 하락과 시각적인 끊김 현상이 발생할 수 있다.
 - Serialization 문제가 있기에 primitive type과 simple, small objects만 저장해야 한다.
 - Intent를 통해 activity를 열었다면 bundle of extras가 activity에게 전달되고 onSaveInstanceState() bundle 대신 extras bundle를 사용할 수도 있다.
 - onSaveInstanceState()를 사용하거나 extras bundle를 사용하여도 ViewModel를 여전히 사용하여 configuration change에서 data가 database로부터 reload되는 것을 막을 수 있다.
+  - 유지해야 하는 UI data가 simple, lightweight하다면 onSaveInstanceState()만 사용해도 된다.
 
 #### Hook into saved state using SavedStateRegistry
 - Fragment 1.1.0, Activity 1.0.0부터 Activity or Fragment와 같은 UI controllers에서 SavedStateRegistryOwner를 implement하고 SavedStateRegistry를 제공한다.
