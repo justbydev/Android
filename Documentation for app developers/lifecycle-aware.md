@@ -660,7 +660,7 @@ private final Runnable mPostValueRunnable = new Runnable() {
 
 <b id="f9">9) </b>LiveData는 항상 UI를 처리하기 위해 사용하기에 mainthread에서 값을 처리하도록 하는 것일까? 다른 용도는 없을까? [↩](#r9)<br>
 
-<b id="f10">9) </b> transformations LiveData 부분 [↩](#r10)<br>
+<b id="f10">10) </b> transformations LiveData 부분 [↩](#r10)<br>
 - You can use transformation methods to carry information across the observer's lifecycle. The transformations aren't calculated unless an observer is watching the returned LiveData object. Because the transformations are calculated lazily, lifecycle-related behavior is implicitly passed down without requiring additional explicit calls or dependencies.
 
 <b id="f11">11) </b>getPostalCode(address).observe() 이런 형식을 사용해서 호출될 때마다 이전 것을 unregister하고 새로운 것을 register 한다는 뜻일까? [↩](#r11)<br>
