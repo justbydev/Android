@@ -318,6 +318,8 @@ override fun onBackPressed() {
 <b id="f4">4) </b> 만약 singletask에서 taskAffinity가 없다면?[↩](#r4)<br>
 - affinity는 task name이며 따로 지정하지 않으면 package name을 사용한다.
 - affinity를 지정하지 않는다면 singletask여도 같은 task에 쌓이게 된다.
+  - singletask, singleinstance 사용 시 taskaffinity를 지정하지 않으면 같은 task로 들어가는 것 같다.
+    - 그렇다면 어차피 singletask, singleinstance 사용 여부와 상관없이 taskaffinity로 지정한 affinity로 결정되는 것 같은데 singletask, singleinstance 사용을 확실히 할 수 있는 방법이 있을까?
 - 물론 다시 같은 activity를 호출하게 되면 재사용된다.
 - 즉, singletask는 하나의 task에 activity instance는 무조건 한 개 있어야 한다는 것을 의미한다.
 - 이는 singleInstance도 같은 현상이 나타날 수 있다.
