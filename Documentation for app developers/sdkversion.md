@@ -46,7 +46,8 @@ For more details, see Configure your build.
   - 현재 작성된 코드를 new compilation check를 받을 수 있도록 한다.
   - 새롭게 deprecated되는 API들에 대비하고 새로운 API를 사용할 준비를 할 수 있다.
   
-  
+## 추가 정리
+[추가 Q&A](https://github.com/justbydev/Android/issues/2)
   
   
   
