@@ -208,6 +208,8 @@ public void setContentView(int resId) {
 <b id="f4">4) </b> data 변화가 view에 적용되는 것 뿐 아니라 user update를 listen해서 user update에 의한 view 변화가 역으로 data에 적용되는 것 [↩](#r4)<br>
 
 
+## 추가 정리
+[추가 Q&A](https://github.com/justbydev/Android/issues/3)
 
 
 
