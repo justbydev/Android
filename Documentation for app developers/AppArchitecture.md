@@ -663,3 +663,12 @@ class LatestNewsActivity : AppCompatActivity() {
 - 만약 여러 명의 consumers가 있고 event가 여러 번 발생하는 것이 문제가 된다면 app architecture를 재고려해봐야 한다.
 - 언제 state가 사용되어야 하는지 생각하자
   - app이 background에 있을 때는 사용되지 않는 것이 좋을 수도 있다.
+
+
+## 추가 정리
+[추가 Q&A](https://github.com/justbydev/Android/issues/1)
+
+
+
+
+
