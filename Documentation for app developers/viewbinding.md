@@ -173,8 +173,96 @@ public static ActivityAwesomeBinding bind(@NonNull View rootView) {
 - layout variables or layout expressions를 지원하지 않아 dynamic UI content를 XML layout file에 정의할 수 없다.
 - two-way data binding<sup id="r4">[4)](#f4)</sup>를 지원하지 않는다.
 
+## include, merge tag가 있을 때 View Binding 사용
+### [include tag without merge tag]
+- include tag(without merge tag)가 있는 경우 tag에 id를 지정해준다.
+  - 이 id는 binding class 내에 include tag layout으로 지정한 것에 대한 property를 생성하는데 필요하다.
+- binding class 내에 include tag layout에 대한 object가 생성된다.
+```Gradle
+<!-- activity_awesome.xml -->
+<androidx.constraintlayout.widget.ConstraintLayout>
+    <include android:id="@+id/includes" layout="@layout/included_buttons"
+</androidx.constraintlayout.widget.ConstraintLayout>
+  
+<!-- included_buttons.xml -->
+<androidx.constraintlayout.widget.ConstraintLayout>
+    <Button android:id="@+id/include_me" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+```kotlin
+public final class ActivityAwesomeBinding implements ViewBinding {
+  ...
 
+  @NonNull
+  public final IncludedButtonsBinding includes;
+```
+- 위와 같이 지정한 id가 이름이 된 object가 생성된다.
+- 이를 통해서 ActivityAwesomeBinding.includes.includeme와 같이 접근할 수 있게 된다.
 
+### [include tag with merge tag]
+- merge tag가 있는 경우 include tag가 eliminate 된다.
+- merge tag가 있을 때 include tag에 id를 지정하고 view binding을 사용하면 다음과 같은 오류가 발생한다.
+  - Missing required view with ID
+```kotlin
+@NonNull
+public static ActivityTestBinding bind(@NonNull View rootView) {
+  // The body of this method is generated in a way you would not otherwise write.
+  // This is done to optimize the compiled bytecode for size and performance.
+  String missingId;
+  missingId: {
+    View viewMerged = rootView.findViewById(R.id.view_merged);
+    if (viewMerged == null) {
+      missingId = "viewMerged";
+      break missingId;
+    }
+    MergeViewBinding viewMergedBinding = MergeViewBinding.bind(viewMerged);
+    return new ActivityTestBinding((LinearLayout) rootView, viewMergedBinding);
+  }
+  throw new NullPointerException("Missing required view with ID: ".concat(missingId));
+}
+```
+- 따라서 merge tag가 있는 경우 다음과 같은 방법으로 view binding을 사용할 수 있다.
+  - include 되는 layout에 대해 생성된 binding class에 대해 static bind()를 통해 instance를 생성한다.
+  - bind() method에 pass하는 root view는 include 해주는 layout root view다.
+  - 이렇게 생성된 binding class instance를 통해 접근한다.
+
+```Gradle
+/* placeholder.xml */
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <TextView
+        android:id="@+id/tvPlaceholder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    
+</merge>
+```
+```Gradle
+/* result_profile */
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include layout="@layout/placeholder" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+```kotlin
+private lateinit var binding: ResultProfileBinding
+private lateinit var mergebinding: PlaceholderBinding
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    binding = ResultProfileBinding.inflate(layoutInflater)
+    val view = binding.root
+    mergebinding = PlaceholderBinding.bind(view)
+    setContentView(view)
+    
+    mergebinding.tvPlaceholder.text = "test"
+}
+```
+
+    
 ## Q&A
 <b id="f1">1) </b>Pacal case는 첫 단어를 대문자로 표기하고 붙여 쓰는 방식 [↩](#r1)<br>
 <b id="f2">2) </b> setContentView()에 layout file ID를 넘기지 않고 root view를 넘기는 이유
