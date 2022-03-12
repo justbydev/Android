@@ -3,6 +3,7 @@
 [1) Application Fundamentals](https://github.com/justbydev/Android/blob/main/Documentation%20for%20app%20developers/AppFundamentals.md)<br>
 [2) Guide to app architecture](https://github.com/justbydev/Android/blob/main/Documentation%20for%20app%20developers/AppArchitecture.md)<br>
 [3) SDKVersion](https://github.com/justbydev/Android/blob/main/Documentation%20for%20app%20developers/sdkversion.md)<br>
+[4) View Binding](https://github.com/justbydev/Android/blob/main/Documentation%20for%20app%20developers/viewbinding.md)<br>
 ### 2. 기본 이론
 [1) Fragment-ktx 1(create ~ backstack)](https://github.com/justbydev/Android/blob/main/Theory/Fragment1.md)<br>
 [2) Fragment-ktx 2(animation ~ DialogFragment)](https://github.com/justbydev/Android/blob/main/Theory/Fragment2.md)
