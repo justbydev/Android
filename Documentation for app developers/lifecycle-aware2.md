@@ -434,7 +434,7 @@ class MyRepository {
         }
     }
 }
-
+```
 ## Q&A
 #### [Save UI states]
 <b id="f1">1) </b>ViewModel, Saved instance state의 data limitations은 정확히 어느 정도인가? [↩](#r1)<br>
