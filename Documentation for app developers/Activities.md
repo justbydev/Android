@@ -394,7 +394,7 @@ class MyActivity : Activity() {
   - app A에서는 onPause()가 호출되고 app B에서는 onResume()가 호출된다.
 
 ### [Activity or dialog appears in foreground]
-- 만약 새로운 activity나 dialog가 foreground로 와서 focus를 가지고 진행 중인 activity를 부분적으로 가리면 가려진 activity는 focus를 잃고 Paused state가 되면서 onPause()를 호출한다.
+- 만약 새로운 activity나 dialog<sup id="rc">[c)](#fc)</sup>가 foreground로 와서 focus를 가지고 진행 중인 activity를 부분적으로 가리면 가려진 activity는 focus를 잃고 Paused state가 되면서 onPause()를 호출한다.
   - 가려진 activity가 다시 foreground로 오고 focus를 얻으면 onResume()이 호출된다.
 - 만약 새로운 activity나 dialog가 foreground로 와서 focus를 가지고 진행 중인 activity를 완전히 가리면 가려진 activity는 focus를 잃고 Stopped state가 되면서 system은 빠르게 onPause(), onStop()을 호출한다.
   - 가려진 activity가 다시 foreground로 오고 focus를 얻으면 onRestart(), onStart(), onResume()이 호출된다.
@@ -606,4 +606,10 @@ public static final int RESULT_ENDED_GAME = RESULT_FIRST_USER + 0; // Defined by
 public static final int RESULT_ACTIVATED_RADAR = RESULT_FIRST_USER + 1; // Defined by an app.
 public static final int RESULT_LAUNCHED_ROCKETS = RESULT_FIRST_USER + 2; // Defined by an app.
 ```
+<c id="fc">c) </b>여기서 dialog는 단순히 activity에 종속되어 있는 AlertDialog와 같은 것이 아닌 dialog as activity를 말하는 것인가?[↩](#rc)<br>
+- 우선 AlertDialog로 테스트해 본 결과 onPause()가 호출되지 않는다.
+- dialog as activity를 하면 기존 activity가 onPause()까지만 호출되고 되돌아가면 onResume()이 호출되는 것을 확인했다.
+- 그렇다면 back stack에서 Activity가 top에 위치하지 않은 경우를 말하는 것일까?
+  - AlertDialog로 화면을 가리고 focus를 얻어도 상관이 없는 것인가?
+
 
