@@ -434,7 +434,7 @@ class MyTestSuite {
 - 이와 같은 state에서는 activity의 View elements와 자유롭게 interact 할 수 있다.
 - test가 끝나면 close하는 것이 좋다.
   - use extension을 사용하여 activity가 자동으로 close되도록 한다.
-- 다른 방법으로 ActivityScenarioRule를 사용하여 each test 전에 자동으로 ActivityScenario.launch하도록 할 수도 있다.
+- 다른 방법으로 ActivityScenarioRule를 사용하여 각 테스트 전에 ActivityScenario.launch를, 테스트 해제 시에는 ActivityScenario.close를 자동으로 호출할 수 있다.
 ```kotlin
 @RunWith(AndroidJUnit4::class)
 class MyTestSuite {
