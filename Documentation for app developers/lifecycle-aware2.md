@@ -144,7 +144,7 @@ class MainFragment : Fragment() {
 - Fragment 1.2.0 혹은 Activity 1.1.0부터 위와 같이 사용한다.
 - default ViewModel factory가 ViewModel에게 appropriate한 SavedStateHandle를 제공한다.
 - custom ViewModelProvider.Factory instance를 사용하면 AbstractSavedStateViewModelFactory를 extend 해서 SavedStateHandle를 사용할 수 있다.
-- 만약 earlier version을 사용한다면 lifecycle-viewmodel-savedstate를 dependency에 추가하고 SavedStateViewModelFactory를 factory로 사용한다.
+- 만약 earlier version을 사용한다면 lifecycle-viewmodel-savedstate를 dependency에 추가하고 SavedStateViewModelFactory를 factory로 사용한다.<sup id="rc">[c)](#fc)</sup>
 ### [Working with SavedStateHandle]
 - SavedStateHandle은 key-value map으로 set(), get()를 통해 사용한다.
 - getLiveData()를 통해 MutableLiveData도 return 받는다.
@@ -179,7 +179,7 @@ class SavedStateViewModel(private val savedStateHandle: SavedStateHandle) : View
 - 만약 class가 Parcelable or Serializable<sup id="r5">[5)](#f5)</sup>를 implement하지 않고 modify할 수 없다면 SavedStateHandle를 통해 직접 저장할 수 없다.
 - Lifecycle 2.3.0-alpha03부터 SavedStateHandle은 setSavedStateProvider()를 사용하여 Bundle에 object를 저장할 수 있도록 한다.
 - saveState()를 통해서 SavedStateProvider로부터 Bundle을 가져오고 저장한다.
-- SavedStateHandle.get(key)르 통해서 Bundle를 가져오게 된다.
+- SavedStateHandle.get(key)를 통해서 Bundle를 가져오게 된다.
   - 이때의 key 값은 setSavedStateProvider에서 저장한 Provider key값이다.
 ```kotlin
 private fun File.saveTempFile() = bundleOf("path", absolutePath)
@@ -441,11 +441,14 @@ addOnContextAvailableListener(new OnContextAvailableListener() {
 - onSaveInstanceState의 Bundle이 아닌 Intent에 담겼던 bundle of extras에 데이터를 저장한다.
 - 이 데이터가 configuration change, system destroying으로부터 UI state를 저장해서 복구할 수 있다.  
 
-
-
-
-
-
+<b id="fc">c) </b>SavedStateHandle & ViewModelFactory[↩](#rc)<br>
+- ViewModel 생성자 파라미터에 SavedStateHandle 이외에 다른 파라미터가 없는 경우
+  - 그냥 ViewModel 생성자 파라미터에 SavedStateHandle를 적는다.
+    - default ViewModel factory를 사용한다.
+  - early version이라며 SavedStateViewModelFactory를 ViewModelProvider에게 넘겨준다.
+- ViewModel 생성자 파리미터에 SavedStatehandle 이외에 다른 파라미터가 있는 경우
+  - ViewModel 생성자 파라미터에 다른 인자가 있으면 에러가 발생해서 custom ViewModel factory를 만들어야 한다.
+  - custom ViewModelProvider.Factory instance를 사용하면 AbstractSavedStateViewModelFactory를 extend 해서 SavedStateHandle를 사용할 수 있다.
 
 
 
