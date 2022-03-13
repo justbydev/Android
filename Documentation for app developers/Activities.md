@@ -42,6 +42,7 @@
 ```
 - Intent filters를 지정하게 되는데 explicit request뿐 아니라 implicit request로 activity를 launch할 수 있도록 한다.
   - < action >은 수행할 일반적인 작업을 의미하고 < category >, < data >는 optional element다.<sup id="r1">[1)](#f1)</sup>
+  - 이런 elemets들은 combine되어 activity가 respond할 intent type을 지정한다.
 ```kotlin
 val sendIntent = Intent().apply {
     action = Intent.ACTION_SEND
