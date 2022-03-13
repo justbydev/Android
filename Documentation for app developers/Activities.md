@@ -52,6 +52,7 @@ val sendIntent = Intent().apply {
 startActivity(sendIntent)
 ```
 - 만약 다른 app이 activities에 접근하지 못하게 하려면 intent filters를 지정하지 않는다.
+  - intent filters를 지정하지 않은 activities는 explicit intents를 통해 같은 app 내에서 시작할 수 있다.
 #### Declare permissions
 ```Gradle
 <manifest>
