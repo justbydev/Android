@@ -181,6 +181,9 @@ class CameraComponent : LifecycleObserver {
 - 어떤 event에서 initialization operation을 하든 corresponding한 lifecycle event에서 resource를 해제해야 한다.
   - 만약 ON_START event 후에 initialize했다면 ON_STOP event 후에 해제해야 한다.
   - 만약 ON_RESUME event 후에 initialize했다면 ON_PAUSE event 후에 해제해야 한다.<sup id="r4">[4)](#f4)</sup>
+- 위의 camera initialization code를 onStart(), onStop()과 같은 callbacks에 직접 구현할 수도 있다.
+  - 하지만 independent, lifecycle-aware component에 구현하는 것을 추천한다.
+  - 이런 logic을 여러 activities에서 재사용한다면 duplicate code를 줄일 수 있다.
 
 #### onPause()
 - user가 처음 activity를 벗어난 것을 인식했을 때 system이 호출한다.(벗어난 것이 항상 destroy됐다는 것은 아니다.)
