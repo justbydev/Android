@@ -109,7 +109,7 @@ class SearchFragment : Fragment() {
 ### [Use local persistence to handle process death for complex or large data]
 - database, shared prefereces와 같은 persisten local storage는 application이 user's device에 있는 한 계속 남아있다.
 - application process death되어도 데이터는 남아있지만 retrieve하기에 expensive하다.
-  - memory의 local storage로부터 읽어와야 하기 때문이다.
+  - local storage에서 메모리로 읽어와야 하기 때문이다.
 - transient UI state의 경우 ViewModel, saved instance state를 사용하고 그 이외의 app data는 persistent storage를 사용해서 저장해야 한다.
 
 ### [Managing UI state: divide and conquer]
