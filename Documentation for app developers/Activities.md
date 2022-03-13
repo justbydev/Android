@@ -488,7 +488,7 @@ class MyTestSuite {
 }
 ```
 - system이 resource가 모자라 activity를 destroy하는 상황을 simulate하고 싶다면 recreate()를 사용한다.
-- ActivityScenario class는 @NonConfigurationInstance를 사용하여 activity의 saved instance state와 object는 유지한다.
+- ActivityScenario class는 @NonConfigurationInstance를 사용하여 activity의 saved instance state와 object를 유지한다.
 
 #### Retrieve activity results
 ```kotlin
@@ -506,7 +506,7 @@ class MyTestSuite {
     }
 }
 ```
-- finished activity로부터 result code나 data를 받고 싶다면 ActivityScenario object의 result field를 사용한다.
+- finished activity와 연결된 result code나 data를 받고 싶다면 ActivityScenario object의 result field를 사용한다.
 #### Trigger actions in the activity
 - ActivityScenario안에서의 모든 method는 blocking calls이기 때문에 instrumentation thread에서 실행해야 한다.
 - activity의 action을 trigger하려면 Espresso view matchers를 사용한다.
