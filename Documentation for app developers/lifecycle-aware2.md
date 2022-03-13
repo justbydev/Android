@@ -44,7 +44,7 @@
   - serialization<sup id="r3">[3)](#f3)</sup>은 objects being serialized가 복잡하면 많은 메모리를 사용한다.
   - configuration change동안 serialization이 main thread에서 발생하면 프레임 하락과 시각적인 끊김 현상이 발생할 수 있다.
 - Serialization 문제가 있기에 primitive type과 simple, small objects만 저장해야 한다.
-- Intent를 통해 activity를 열었다면 bundle of extras가 activity에게 전달되고 onSaveInstanceState() bundle 대신 extras bundle를 사용할 수도 있다.
+- Intent를 통해 activity를 열었다면 bundle of extras가 activity에게 전달되고 onSaveInstanceState() bundle 대신 extras bundle를 사용할 수도 있다.<sup id="rb">[b)](#fb)</sup>
 - onSaveInstanceState()를 사용하거나 extras bundle를 사용하여도 ViewModel를 여전히 사용하여 configuration change에서 data가 database로부터 reload되는 것을 막을 수 있다.
   - 유지해야 하는 UI data가 simple, lightweight하다면 onSaveInstanceState()만 사용해도 된다.
 
@@ -433,6 +433,11 @@ addOnContextAvailableListener(new OnContextAvailableListener() {
 <b id="fa">a) </b>onSaveInstanceState에 의해 저장된 Saved State는 해당 activity가 destroy되면 disk에서 제거되는가?
 - 화면 전환 시 저장됐던 Saved State가 finish()에 의해 destroy되면 제거된 것을 확인할 수 있었다.[↩](#ra)<br>
 
+<b id="fb">b) </b>intent를 통해 activity를 열었다면 bundle of extras가 configuration change, system destroying으로부터 UI state를 저장할 수 있다는 말[↩](#rb)<br>
+- Intent를 통해 startActivity로 activity를 시작할 때 bundle of extras를 담아 시작한다.
+- 새로운 activity에서 getIntent()를 통해 Intent를 받고 bundle of extras를 받는다.
+- onSaveInstanceState의 Bundle이 아닌 Intent에 담겼던 bundle of extras에 데이터를 저장한다.
+- 이 데이터가 configuration change, system destroying으로부터 UI state를 저장해서 복구할 수 있다.  
 
 
 
