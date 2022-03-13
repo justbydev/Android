@@ -21,6 +21,8 @@
 - configuration change(rotation or switching into multi-window mode)와 같은 상황에서 user는 activity's UI state가 유지되길 expect하지만 system은 activity를 destroy하고 저장된 UI state도 없앤다.
 - 잠깐 다른 app으로 switch했다가 돌아오는 경우에도 user는 activity's UI state가 유지되길 expect한다.
   - 하지만 이 경우에도 system이 application process를 destroy할 수 있다.
+  - 이렇게 destroy하는 경우에도 UI state도 함께 destroy된다.
+- user는 state가 그대로 유지되길 예상하지만 clean state가 되어 user expectation과 달라지게 된다.
 
 ### [Options for preserving UI state]<sup id="r1">[1)](#f1)</sup>
 <img width="742" alt="스크린샷 2022-03-07 오후 11 32 58" src="https://user-images.githubusercontent.com/17876424/157054003-07513d4a-ab0c-4250-9465-a723605a6f56.png">
