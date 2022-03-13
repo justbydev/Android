@@ -147,7 +147,7 @@ class MainFragment : Fragment() {
 - 만약 earlier version을 사용한다면 lifecycle-viewmodel-savedstate를 dependency에 추가하고 SavedStateViewModelFactory를 factory로 사용한다.<sup id="rc">[c)](#fc)</sup>
 ### [Working with SavedStateHandle]
 - SavedStateHandle은 key-value map으로 set(), get()를 통해 사용한다.
-- getLiveData()를 통해 MutableLiveData도 return 받는다.
+- getLiveData()를 통해 MutableLiveData도 return 받는다.<sup id="rd">[d)](#fd)</sup>
 - key 값이 update되면 LiveData는 새로운 값을 받는다.
   - updated value는 transfrom LiveData로 사용할 수 있다.
 ```kotlin
@@ -450,6 +450,35 @@ addOnContextAvailableListener(new OnContextAvailableListener() {
   - ViewModel 생성자 파라미터에 다른 인자가 있으면 에러가 발생해서 custom ViewModel factory를 만들어야 한다.
   - custom ViewModelProvider.Factory instance를 사용하면 AbstractSavedStateViewModelFactory를 extend 해서 SavedStateHandle를 사용할 수 있다.
 
+<b id="fd">d> </b>SavedStateHandle.getLiveData("key")[↩](#rd)<br>
+```kotlin
+@NonNull
+private <T> MutableLiveData<T> getLiveDataInternal(
+        @NonNull String key,
+        boolean hasInitialValue,
+        @Nullable T initialValue) {
+    MutableLiveData<T> liveData = (MutableLiveData<T>) mLiveDatas.get(key);
+    if (liveData != null) {
+        return liveData;
+    }
+    SavingStateLiveData<T> mutableLd;
+    // double hashing but null is valid value
+    if (mRegular.containsKey(key)) {
+        mutableLd = new SavingStateLiveData<>(this, key, (T) mRegular.get(key));
+    } else if (hasInitialValue) {
+        mutableLd = new SavingStateLiveData<>(this, key, initialValue);
+    } else {
+        mutableLd = new SavingStateLiveData<>(this, key);
+    }
+    mLiveDatas.put(key, mutableLd);
+    return mutableLd;
+}
+```
+- 이미 map에 key에 해당하는 값이 있다면 그 LiveData를 return하고 없다면 initialValue와 key값으로 새롭게 생성해서 return한다.
+  - 만약 initialValue가 없다면 null 값과 함께 LiveData를 새롭게 생성해서 return 한다.
 
 
 
+
+
+       
