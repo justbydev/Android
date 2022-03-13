@@ -40,7 +40,7 @@
 
 ### [Use onSaveInstanceState() as backup to handle system-initiated process death]
 - Saved instance state는 configuration change, process death에서도 유지되지만 storage, speed limitation이 있다.
-  - 왜냐하면 onSaveInstanceState()는 disk에 data가 serialize되기 때문이다.
+  - 왜냐하면 onSaveInstanceState()는 disk에 data가 serialize되기 때문이다.<sup id="ra">[a)](#fa)</sup>
   - serialization<sup id="r3">[3)](#f3)</sup>은 objects being serialized가 복잡하면 많은 메모리를 사용한다.
   - configuration change동안 serialization이 main thread에서 발생하면 프레임 하락과 시각적인 끊김 현상이 발생할 수 있다.
 - Serialization 문제가 있기에 primitive type과 simple, small objects만 저장해야 한다.
@@ -429,6 +429,9 @@ addOnContextAvailableListener(new OnContextAvailableListener() {
 ```
 <b id="f5">5) </b>Parceable과 Serializable의 차이[↩](#r5)<br>
 
+## 추가 Q&A
+<b id="fa">a) </b>onSaveInstanceState에 의해 저장된 Saved State는 해당 activity가 destroy되면 disk에서 제거되는가?
+- 화면 전환 시 저장됐던 Saved State가 finish()에 의해 destroy되면 제거된 것을 확인할 수 있었다.[↩](#ra)<br>
 
 
 
