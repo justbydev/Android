@@ -384,7 +384,19 @@ val user: LiveData<User> = liveData {
 - 만약 작업이 다 끝나지 않았는데 cancel되었다면 LiveData가 다시 active하게 되면 재시작하게 된다.
   - 이후 성공적으로 마무리하면 재시작하지 않는다.
   - 하지만 자동으로 cancel되었을 때만 재시작하며 CancellationException과 같이 다른 이유로 cancel되었다면 재시작하지 않는다.
-
+```kotlin
+val user: LiveData<Result> = liveData {
+    emit(Result.loading())
+    try {
+        emit(Result.success(fetchUser()))
+    } catch(ioException: Exception) {
+        emit(Result.error(ioException))
+    }
+}
+```
+- block으로부터 여러 value를 emit할 수도 있다.
+  - 각각의 emit()은 LiveData value가 main thread에서 set될 때까지 block execution을 suspend한다.
+  - 또한 emitSource() function을 사용하여 새로운 value를 emit하고 싶을때마다 LiveData로부터 emit할 수 있다.
 ## Q&A
 #### [Save UI states]
 <b id="f1">1) </b>ViewModel, Saved instance state의 data limitations은 정확히 어느 정도인가? [↩](#r1)<br>
