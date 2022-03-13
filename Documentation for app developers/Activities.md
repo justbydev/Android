@@ -194,9 +194,9 @@ class CameraComponent : LifecycleObserver {
   - dialog와 같이 new, semi-tranparent activity가 생성됐을 경우 기존 activity가 visible하지만 focus를 잃었기 때문에 pause한다.
 - activity가 paused state가 되면 lifecycle-aware component는 ON_PAUSE event를 받게 된다.
   - @OnLifecycleEvent(Lifecycle.EVENT.ON_PAUSE)
-  - component가 더 이상 foreground에 있지 않을 때 lifecycle compoenent가 기능을 멈추기 위해 사용하게 된다.
+  - component가 더 이상 foreground에 있지 않을 때 lifecycle component가 기능을 멈추기 위해 사용하게 된다.
 - system resource를 해제할 때도 사용한다.
-  - 하지만 multi-window mode인 경우 visible하기 때문에 완전히 해제거나 UI-related resource, operation을 조정하기 위해 onStop()를 고려해야 한다.
+  - 하지만 multi-window mode인 경우 visible하기 때문에 완전히 해제하거나 UI-related resource, operation을 조정하기 위해 onStop()를 고려해야 한다.
 ```kotlin
 class CameraComponent : LifecycleObserver {
 
