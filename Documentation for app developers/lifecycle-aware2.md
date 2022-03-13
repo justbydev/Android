@@ -290,8 +290,9 @@ class MyFragment: Fragment() {
     }
 }
 ```
+- each Lifecycle object를 위해 LifecycleScope를 정의한다.
 - Lifecycle object 안에서 정의하며 Lifecycle이 destroy되면 자동을 cancel된다.
-- Lifecycle이 CoroutineScope는 lifecycle.coroutineScope or lifecycleOwner.lifecycleScope를 통해 접근할 수 있다.
+- Lifecycle의 CoroutineScope는 lifecycle.coroutineScope or lifecycleOwner.lifecycleScope를 통해 접근할 수 있다.
 ### [Restarable Lifecycle-aware coroutines]
 ```kotlin
 class MyFragment : Fragment() {
@@ -450,7 +451,7 @@ addOnContextAvailableListener(new OnContextAvailableListener() {
   - ViewModel 생성자 파라미터에 다른 인자가 있으면 에러가 발생해서 custom ViewModel factory를 만들어야 한다.
   - custom ViewModelProvider.Factory instance를 사용하면 AbstractSavedStateViewModelFactory를 extend 해서 SavedStateHandle를 사용할 수 있다.
 
-<b id="fd">d> </b>SavedStateHandle.getLiveData("key")[↩](#rd)<br>
+<b id="fd">d) </b>SavedStateHandle.getLiveData("key")[↩](#rd)<br>
 ```kotlin
 @NonNull
 private <T> MutableLiveData<T> getLiveDataInternal(
@@ -477,7 +478,14 @@ private <T> MutableLiveData<T> getLiveDataInternal(
 - 이미 map에 key에 해당하는 값이 있다면 그 LiveData를 return하고 없다면 initialValue와 key값으로 새롭게 생성해서 return한다.
   - 만약 initialValue가 없다면 null 값과 함께 LiveData를 새롭게 생성해서 return 한다.
 
-
+<b id="fe">e) </b>coroutine withContext(CoroutineContext)
+```kotlin
+suspend fun <T> withContext(context: CoroutineContext, block: suspend CoroutineScope.() -> T): T
+```
+- 주어진 coroutine context에서 이루어지는 suspending block(CoroutineContext는 Coroutine이 실행되는 환경)
+- withContext가 끝나기 전까지 해당 coroutine은 suspend된다.
+- 마지막 줄의 값이 반환 값이 된다.
+  
 
 
 
