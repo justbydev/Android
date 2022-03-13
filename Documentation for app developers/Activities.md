@@ -230,9 +230,10 @@ class CameraComponent : LifecycleObserver {
   - 또한, View object의 현재 상태도 system이 유지하기 때문에 저장하고 복구할 필요가 없다.
     - 예를 들어 EditText에 있던 text를 system이 유지해주고 이렇게 담겨져 있던 content를 개발자가 직접 save하고 restore하지 않아도 된다.
   - 만약 activity가 stop일 때 system이 process를 destroy해도 View object 상태는 system이 Bundle에 저장하고 다시 activity로 돌아오면 restore한다.
+- 다시 activity로 돌아오게 되면 system은 onRestart()를 invoke하고 Activity가 finished되면 onDestroy()를 call한다.
 
 #### onDestroy()
-- activity가 destroy될 때 호출된다.
+- activity가 destroy될 때 호출된다.<sup id="ra">[a)](#fa)</sup>
   - user가 완전히 끝내거나 finish()를 호출한 경우
   - configuration change에 의해 system이 잠깐 activity가 destroy한 경우
 - activity가 destroyed state가 되면 lifecycle-aware component는 ON_DESTROY event를 받게 된다.
@@ -241,7 +242,7 @@ class CameraComponent : LifecycleObserver {
   - 만약 activity가 완전히 끝난 경우에는 onCleared() method를 통해 ViweModel data도 clean up된다.
   - configuration change에 의한 destroy 상황인지 finish()에 의한 destroy 상황인지는 isFinishing() method로 구분할 수 있다.
     - finish()에 의한 destroy인 경우 isFinishing()은 true를 return한다.
-- onStop()에서 아직 release하지 않은 모든 resouce를 release한다.
+- onStop()에서 아직 release하지 않은 모든 resouce를 release 해야 한다.
 
 ### [Activity state and ejection from memory]
 <img width="763" alt="스크린샷 2022-03-08 오후 1 36 30" src="https://user-images.githubusercontent.com/17876424/157167053-e85ae763-f9cb-462e-a7bc-ca97647e9183.png">
@@ -588,7 +589,11 @@ if (sendIntent.resolveActivity(packageManager) != null) {
 
 - [Intent and Intent filters](https://developer.android.com/guide/components/intents-filters#Receiving)
 
-
-
+## 추가 Q&A
+<b id="fa">a) </b> onDestroy()는 항상 호출되는가?[↩](#ra)<br>
+- There are situations where the system will simply kill the activity's hosting process without calling this method (or any others) in it
+  - activity의 hosting process를 kill할 때 onDestroy() 호출이 이루어지지 않는 situation도 있다.
+- 정확히 어떤 상황에서 onDestroy()가 호출이 되지 않는 것인가?
+  - 예상하지 못한다면 onStop()에서 release시키지 못한 resource를 onDestroy()에서 처리하는 것은 unexpected situation을 불러일으킬 수 있지 않을까?
 
 
