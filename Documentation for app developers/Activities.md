@@ -368,12 +368,14 @@ class MyActivity : Activity() {
   - Integer의 경우 call를 구별해주는 request code
   - result는 onActivityResult(int, int, Intent)를 통해 받게 된다.
 - child activity는 exit할 때 setResult(int)를 호출하게 된다.
-  - Integer는 result code로 RESULT_CANCELED(-1), RESULT_OK(0), or RESULT_FIRST_USER(1)로 시작하는 custom value를 사용할 수 있다.
+  - Integer는 result code로 RESULT_CANCELED(-1), RESULT_OK(0), or RESULT_FIRST_USER(1)<sup id="rb">[b)](#fb)</sup>로 시작하는 custom value를 사용할 수 있다.
   - 또한 Intent object에 additional data를 담아서 return할 수 있다.
     -  setResult(int, Intent) 사용
 - 만약 crash와 같은 이유로 child activity가 fail되면 RESULT_CANCELED를 parent activity에게 보낸다.
 #### Coordinating activities
 - one activity가 다른 activity를 시작할 때 둘은 각자의 lifecycle를 갖게 된다.
+- second activity가 create되기 전까지 first activity는 완전하게 stopped되지 않는다.
+  - the process of starting the second one overlaps with the process of stopping the first one.
 - 이런 상황에서 다음과 같이 lifecycle callback이 order를 가진다.(A가 B를 시작한 경우)
 1) Activity A의 onPause()가 실행된다.
 2) Activity B의 onCreate(), onStart(), onResume()가 순서대로 실행되고 이제 Activity B가 user focus를 가진다.
@@ -411,7 +413,7 @@ class MyActivity : Activity() {
 
 ## Test your activities
 - activity는 모든 user interaction을 처리하고 lifecycle event에 따라 제대로 된 반응을 하는 것이 중요하기 때문에 device-level events 동안 app's activities를 test하는 것이 중요하다.
-### [Drive an activity'sstate]
+### [Drive an activity's state]
 - activities test에 있어 중요한 측면은 activities를 특정 state에 placing하는 것이다.
 - 여기서는 AndroidX Test library의 ActivityScenario를 사용한다.
   - ActivityScenario는 local unit test와 on-device integration test 모두에서 사용할 수 있는 cross-platform API다.
@@ -596,4 +598,12 @@ if (sendIntent.resolveActivity(packageManager) != null) {
 - 정확히 어떤 상황에서 onDestroy()가 호출이 되지 않는 것인가?
   - 예상하지 못한다면 onStop()에서 release시키지 못한 resource를 onDestroy()에서 처리하는 것은 unexpected situation을 불러일으킬 수 있지 않을까?
 
+<b id="fb">b) </b> RESULT_FIRST_USER는 단지 user-defined values로써 다르게 정의하기 위한 것일까? 언제 사용할까?[↩](#rb)<br>
+```kotlin
+public static final int RESULT_OK = -1; // Defined by Android. You don't write this code.
+public static final int RESULT_CANCELED = 0; // Defined by Android. You don't write this code.
+public static final int RESULT_ENDED_GAME = RESULT_FIRST_USER + 0; // Defined by an app.
+public static final int RESULT_ACTIVATED_RADAR = RESULT_FIRST_USER + 1; // Defined by an app.
+public static final int RESULT_LAUNCHED_ROCKETS = RESULT_FIRST_USER + 2; // Defined by an app.
+```
 
