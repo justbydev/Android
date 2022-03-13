@@ -71,7 +71,7 @@ startActivity(sendIntent)
 - activity에 permission을 지정했다면 app의 manifest에서도 반드시 uses-permission을 지정해야 한다.<sup id="r2">[2)](#f2)</sup>
 
 ## The Activity Lifecycle
-- Activity class는 activity state가 어떻게 변하는지 알 수 있는 callback methods를 제공한다.
+- Activity class는 activity가 state이 바뀌었음을 알 수 있도록 하는 callbacks를 제공한다.
 - lifecycle callback methods를 고려하면 다음과 같은 상황을 막을 수 있다.
   - user가 다른 app으로 switch하거나 phone call할 때 보고 있던 app이 crash되는 상황
   - user가 app을 actively하게 사용하지 않을 때 valuable system resource를 소비하는 상황
