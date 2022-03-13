@@ -228,6 +228,7 @@ class CameraComponent : LifecycleObserver {
   - 단, window manger에는 detach한다.
   - 다시 activity가 재개되면 기존 information을 불러온다.
   - 또한, View object의 현재 상태도 system이 유지하기 때문에 저장하고 복구할 필요가 없다.
+    - 예를 들어 EditText에 있던 text를 system이 유지해주고 이렇게 담겨져 있던 content를 개발자가 직접 save하고 restore하지 않아도 된다.
   - 만약 activity가 stop일 때 system이 process를 destroy해도 View object 상태는 system이 Bundle에 저장하고 다시 activity로 돌아오면 restore한다.
 
 #### onDestroy()
