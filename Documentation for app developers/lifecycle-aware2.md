@@ -103,6 +103,8 @@ class SearchFragment : Fragment() {
     ...
 }
 ```
+- SavedStateRegistry는 onSaveInstanceState()와 같은 Bundle에 데이터를 저장한다.
+
 
 ### [Use local persistence to handle process death for complex or large data]
 - database, shared prefereces와 같은 persisten local storage는 application이 user's device에 있는 한 계속 남아있다.
