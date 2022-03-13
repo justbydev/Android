@@ -396,7 +396,45 @@ val user: LiveData<Result> = liveData {
 ```
 - block으로부터 여러 value를 emit할 수도 있다.
   - 각각의 emit()은 LiveData value가 main thread에서 set될 때까지 block execution을 suspend한다.
-  - 또한 emitSource() function을 사용하여 새로운 value를 emit하고 싶을때마다 LiveData로부터 emit할 수 있다.
+- emitSource() function을 사용하여 새로운 value를 emit하고 싶을때마다 LiveData로부터 multiple values를 emit할 수 있다.
+```kotlin
+class UserDao: Dao {
+    @Query("SELECT * FROM User WHERE id = :id")
+    fun getUser(id: String): LiveData<User>
+}
+
+class MyRepository {
+    fun getUser(id: String) = liveData<User> {
+        val disposable = emitSource(
+            userDao.getUser(id).map {
+                Result.loading(it)
+            }
+        )
+        try {
+            val user = webservice.fetchUser(id)
+            // Stop the previous emission to avoid dispatching the updated user
+            // as `loading`.
+            disposable.dispose()
+            // Update the database.
+            userDao.insert(user)
+            // Re-establish the emission with success type.
+            emitSource(
+                userDao.getUser(id).map {
+                    Result.success(it)
+                }
+            )
+        } catch(exception: IOException) {
+            // Any call to `emit` disposes the previous one automatically so we don't
+            // need to dispose it here as we didn't get an updated value.
+            emitSource(
+                userDao.getUser(id).map {
+                    Result.error(exception, it)
+                }
+            )
+        }
+    }
+}
+
 ## Q&A
 #### [Save UI states]
 <b id="f1">1) </b>ViewModel, Saved instance state의 data limitations은 정확히 어느 정도인가? [↩](#r1)<br>
