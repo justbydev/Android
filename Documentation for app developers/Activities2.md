@@ -22,8 +22,8 @@
     - system은 activity를 finish하기 보다는 activity와 그것의 task를 background로 옮긴다.
     - 이는 user가 warm state에서 app을 빠르게 resume할 수 있도록 한다.
     - 만약 custom back navigation를 필요로 한다면 onBackPressed() override 보다는 AndroidX Activity APIs<sup id="r1">[1)](#f1)</sup>를 추천한다.
-      - system Back press를 intercepting하는 component가 없다면 맞는 system behavior에게 연기한다.
-    - 만약 onBackPressed()를 override해서 activity를 finish한다면 finishing하기보다 super.onBackPressed()에 호출하도록 구현을 update해야 한다.
+      - system Back press를 intercepting하는 component가 없다면 자동으로 적절한 system behavior에게 연기한다.
+    - 만약 onBackPressed()를 override해서 activity를 finish한다면 finishing하기보다 super.onBackPressed()를 호출하도록 구현을 update해야 한다.
       - super.onBackPressed()는 activity, task를 background로 이동시킨다.<sup id="r2">[2)](#f2)</sup>
 
 #### Background and foreground tasks
