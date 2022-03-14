@@ -361,7 +361,8 @@ override fun onBackPressed() {
 
 ## 추가 Q&A
 <b id="fa">a) </b>onNewIntent() 호출 시 lifecycle callbacks[↩](#ra)<br>
-- singleTop인 경우 onNewIntent() 호출
-- onPause() -> onNewIntent() -> onResume() 순서대로 호출된다.
-
+- singleTop인 경우 / singletask인데 top에 있는 activity를 호출하는 경우
+  - onPause() -> onNewIntent() -> onResume() 순서대로 호출된다.
+- singletask인 경우(A-B일 때 A가 singletask이고 B에서 A 호출하는 경우)
+  - B의 onPause() -> A의 onStart() -> A의 onNewIntent() -> A의 onResume() -> B의 onStop() -> B의 onDestroy()
 
