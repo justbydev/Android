@@ -88,7 +88,7 @@
   - 하지만 같은 affinity를 가진 task에 이미 activity가 존재한다면 activity는 그 task에서 launch된다.
   - 만약 이 flag를 사용해서 new task를 만든 뒤 홈 버튼을 눌렀다면 반드시 그 task로 다시 돌아갈 방법이 있어야 한다.
   - 또한, 어떤 entity는 외부 task에서 activities를 시작해서 항상 FLAG_ACTIVITY_NEW_TASK와 함께 사용한다.
-    - 이런 상황에서도 프로그램 icon 사용과 같이 다시 task로 돌아갈 수 있는 독립적인 방법이 있는지 살펴봐야 한다.
+    - 이런 상황에서도 launcher icon 사용과 같이 다시 task로 돌아갈 수 있는 독립적인 방법이 있는지 살펴봐야 한다.
 - allowTaskReparenting attribute를 true로 한 경우
   - 그 activity를 시작한 task에 있다가 같은 affinity를 가진 task가 foreground로 왔을 때 그 task로 옮겨지게 된다.
 
@@ -361,8 +361,12 @@ override fun onBackPressed() {
 
 ## 추가 Q&A
 <b id="fa">a) </b>onNewIntent() 호출 시 lifecycle callbacks[↩](#ra)<br>
-- singleTop인 경우 / singletask인데 top에 있는 activity를 호출하는 경우
+- singleTop인 경우 / singleTask인데 top에 있는 activity를 호출하는 경우
   - onPause() -> onNewIntent() -> onResume() 순서대로 호출된다.
-- singletask인 경우(A-B일 때 A가 singletask이고 B에서 A 호출하는 경우)
+- singleTask인 경우(A-B일 때 A가 singleTask이고 B에서 A 호출하는 경우)
   - B의 onPause() -> A의 onStart() -> A의 onNewIntent() -> A의 onResume() -> B의 onStop() -> B의 onDestroy()
+- root activity인 경우
+  - Android 12 이상부터는 root activity는 destroy되지 않고 background로 가게 된다.
+  - 만약 root activity에 singleTop, singleTask를 사용한 경우에도 onNewIntent()가 호출된다.
+  - onStart() -> onNewIntent() -> onResume() 순서대로 호출된다.
 
