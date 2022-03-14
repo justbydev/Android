@@ -1,4 +1,4 @@
-# Lifecycle-aware components
+# Lifecycle-aware components(Lifecycles, ViewModel, LiveData)
 ## 참고 자료
 [Android Developers: Lifecycle-aware components](https://developer.android.com/topic/libraries/architecture/lifecycle)
 
@@ -598,6 +598,11 @@ class LifecycleBoundObserver extends ObserverWrapper implements LifecycleEventOb
     ...
 
     @Override
+    boolean shouldBeActive() {
+        return mOwner.getLifecycle().getCurrentState().isAtLeast(STARTED);
+    }
+           
+    @Override
     public void onStateChanged(@NonNull LifecycleOwner source,
             @NonNull Lifecycle.Event event) {
         Lifecycle.State currentState = mOwner.getLifecycle().getCurrentState();
@@ -625,6 +630,14 @@ protected void setValue(T value) {
     mVersion++;
     mData = value;
     dispatchingValue(null);
+}
+```
+```kotlin
+static void assertMainThread(String methodName) {
+    if (!ArchTaskExecutor.getInstance().isMainThread()) {
+        throw new IllegalStateException("Cannot invoke " + methodName + " on a background"
+                + " thread");
+    }
 }
 ```
 - postValue()는 background thread에서 동작하다가 mainthread에서 setValue()를 통해 값을 변경한다.
@@ -664,6 +677,7 @@ private final Runnable mPostValueRunnable = new Runnable() {
 - You can use transformation methods to carry information across the observer's lifecycle. The transformations aren't calculated unless an observer is watching the returned LiveData object. Because the transformations are calculated lazily, lifecycle-related behavior is implicitly passed down without requiring additional explicit calls or dependencies.
 
 <b id="f11">11) </b>getPostalCode(address).observe() 이런 형식을 사용해서 호출될 때마다 이전 것을 unregister하고 새로운 것을 register 한다는 뜻일까? [↩](#r11)<br>
+<b id="f12">12) </b> LiveData는 active observer인 상태에서만 update하고 inactive였다가 active 상태가 되면 다시 최신 상태로 update된다고 하는데 내부적으로 어디서 최신 버전으로 update되는 기능이 동작되는 것일까?
 
 
 
