@@ -34,7 +34,7 @@
   - 다시 홈 버튼을 누르고 원래 보던 app을 시작하면 Task A가 foreground로 올라오고 stack top에 있는 activity가 resume된다.
 
 #### Multiple activity instances
-- back stack은 절대 재정렬되지 않기 때문에 같은 activity 여러 개가 back stack에 존재할 수 있다.
+- back stack은 절대 재정렬되지 않기 때문에 같은 activity에 해당하는 여러 instance가 back stack에 존재할 수 있다.
   - back action으로 pop하면 순서대로 navigate하여 같은 activity가 드러나게 된다.
 
 #### multi-window environments
@@ -68,7 +68,7 @@
 - startActivity와 함께 Intent flag를 통해 설정한다.
 - FLAG_ACTIVITY_NEW_TASK
   - launchMode의 "singleTask"와 같다.
-  - 이미 task에 activity가 있다면 onNewIntent()와 함께 그 activity를 실행한다.
+  - 이미 task에 activity가 있다면 onNewIntent()<sup id="ra">[a)](#fa)</sup>와 함께 그 activity를 실행한다.
 - FLAG_ACTIVITY_SINGLE_TOP
   - launchMode의 "singleTop"과 같다.
   - back stack의 top에 같은 activity가 있다면 onNewIntent()와 함께 그 activity를 실행한다.
@@ -357,3 +357,17 @@ override fun onBackPressed() {
 
 <b id="f9">9) </b>FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_DOCUMENT를 같이 사용[↩](#r9)<br>
 - FLAG_ACTIVITY_MULTIPLE_TASK, FLAG_ACTIVITY_NEW_TASK를 같이 사용한 것과 같은 결과를 나타낸다.
+
+
+## 추가 Q&A
+<b id="fa">a) </b>onNewIntent() 호출 시 lifecycle callbacks[↩](#ra)<br>
+- singleTop인 경우 onNewIntent() 호출
+- onPause() -> onNewIntent() -> onResume() 순서대로 호출된다.
+
+
+
+
+
+
+  - NEW_TASK의 경우 root activity만 남는다.ㅏ
+  - NEW_TASK의 경우 root activity만 남는다.
