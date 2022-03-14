@@ -365,9 +365,3 @@ override fun onBackPressed() {
 - onPause() -> onNewIntent() -> onResume() 순서대로 호출된다.
 
 
-
-
-
-
-  - NEW_TASK의 경우 root activity만 남는다.ㅏ
-  - NEW_TASK의 경우 root activity만 남는다.
