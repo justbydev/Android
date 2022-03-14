@@ -34,7 +34,7 @@
   - 다시 홈 버튼을 누르고 원래 보던 app을 시작하면 Task A가 foreground로 올라오고 stack top에 있는 activity가 resume된다.
 
 #### Multiple activity instances
-- back stack은 절대 재정렬되지 않기 때문에 같은 activity가 여러 개 back stack에 존재할 수 있다.
+- back stack은 절대 재정렬되지 않기 때문에 같은 activity 여러 개가 back stack에 존재할 수 있다.
   - back action으로 pop하면 순서대로 navigate하여 같은 activity가 드러나게 된다.
 
 #### multi-window environments
