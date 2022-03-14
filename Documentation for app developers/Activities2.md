@@ -110,7 +110,7 @@
   - 이런 intent filter는 app launcher에 그 activity가 icon과 label로 나타나게 한다.
   - 또한, 언제나 activity를 launch하여 task로 돌아갈 수 있게 한다.
     - 이는 user가 activity launcher를 사용하여 task를 떠나고 나중에 다시 돌아올 수 있게 한다.
-    - 만약 singleTask, singleInstance를 사용하여 new task를 만들고 홈 버튼으로 나가게 되었다면 task는 background에 있고 invisible하게 되는데 ACTION_MAIN, CATEGORY_LAUNCHER를 지정하지 않았으면 task로 돌아갈 수 없게 된다.
+    - 만약 singleTask, singleInstance를 사용하여 new task를 만들고 홈 버튼으로 나가게 되었다면 task는 background에 있고 invisible하게 되는데 ACTION_MAIN, CATEGORY_LAUNCHER를 지정하지 않았으면 task로 돌아갈 수 없게 된다.<sup id="rb">[b)](#fb)</sup>
 
 
 ## Process and Application Lifecycle
@@ -369,4 +369,10 @@ override fun onBackPressed() {
   - Android 12 이상부터는 root activity는 destroy되지 않고 background로 가게 된다.
   - 만약 root activity에 singleTop, singleTask를 사용한 경우에도 onNewIntent()가 호출된다.
   - onStart() -> onNewIntent() -> onResume() 순서대로 호출된다.
+
+<b id="fb">b) </b>singleTask로 인해 new task가 만들어진 후 launcher icon을 클릭해도 ACTION_MAIN, CATEGORY_LAUNCHER로 지정한 activity가 있는 task로 돌아가는데 new task로 돌아갈 방법은 Recents screen을 사용하는 방법만 있을까?[↩](#rb)<br>
+
+
+
+
 
