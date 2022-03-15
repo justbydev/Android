@@ -298,6 +298,75 @@ class MealActivity : AppCompatActivity() {
 - 이렇게 activity에서 FragmentFactory를 설정하면 activity의 fragments hierarchy 전체에 걸쳐 fragment creation 재정의된다.
   - 즉, 추가하는 모든 child fragment의 childFragmentManaer가 하위 수준에서 재정의되지 않는 한 여기에서 설정된 custom fragment factory를 사용한다.
 
+## Fragment transactions
+- fragment add, remove, replace 등과 같이 commit할 각각의 fragment change set을 transaction이라고 하고 transaction에서 어떤 것을 할지 명시하는 것은 FragmentTransaction class에서 제공하는 API를 이용한다.
+- 여러 action을 single transaction에 group 지을 수 있다.
+- 각각의 transaction은 FragmentManager에 의해 back stack으로 관리할 수 있고 fragment 변경 내용을 navigate backward 할 수 있다.
+- FragmentTransaction instance는 FragmentManager로부터 beginTransaction()을 통해 얻을 수 있다.
+- 각각의 FragmentTransaction 이후에는 반드시 commit해야 한다.
+  - commit()을 통해 모든 operations가 transaction에 add되었다는 것을 FragmentManager에게 알린다.
+```kotlin
+val fragmentManager = ...
+val fragmentTransaction = fragmentManager.beginTransaction()
+
+fragmentManager.commit {
+    // Add operations here
+    ...
+    setReorderingAllowed(true)
+}
+```
+```java
+FragmentManager fragmentManager = ...
+
+fragmentManager.beginTransaction()
+    ...
+    .setReorderingAllowed(true)
+    .commit();
+```
+
+### [Allow reordering of fragment state changes]
+- 각각의 FragmentTransaction은 setReorderingAllowed(true)를 사용해야 한다.
+- reordering flag가 default는 아니지만 back stack, animations, transitions에 대해 FragmentManager가 FragmentTransaction을 제대로 실행하기 위해 필요하다.
+- 만약 multiple transaction가 함께 실행될 때 add되고 즉시 replace되는 intermediate fragment과 같은 fragment는 lifecycle change 되거나 animation, transition이 실행되지 않는다.
+
+### [Adding and removing fragments]
+- fragment를 FragmentManager에 add하려면 transaction의 add()를 호출한다.
+  - 이 method는 fragment를 위한 container ID와 add하고 싶은 fragment class name을 받는다.
+  - add된 fragment는 RESUMED state로 이동한다.
+  - container로는 FragmentContainerView를 사용할 것을 강력히 추천한다.
+- host로부터 fragment를 제거하려면 remove()를 호출하고 fragment manager의 findFragmentById()나 findFragmentByTag()를 통해 받은 fragment instance를 전달한다.
+  - 만약 fragment의 view가 container에 add됐었다면 container로부터 view를 제거한다.
+  - removed fragment는 DESTROYED state로 이동한다.
+- 새로운 fragment class instance를 replace()에게 전달하여 container에 존재하는 fragment를 대체한다.
+  - replace()는 container의 fragment에 대해 remove() 후 new fragment를 같은 container에 add하는 것과 같다. 
+- 이러한 FragmentTransaction에서의 변화는 back stack에 add되지 않는다.
+  - FragmentTransaction에서 addToBackStack()을 사용해야 한다.
+- 새로운 fragment를 create하는 것과 saved state로부터 fragment를 restore할 때 같은 mechanism을 사용하는 것을 보장하기 위해 fragment operations을 사용할 때 항상 fragment instance보다 Class를 사용할 것을 강력히 권장한다.
+
+#### Commit is asynchronous
+- commit()은 transaction을 바로 실행하지 않는다.
+  - 대신 가능한 즉시 main UI thread에서 실행되도록 schedule된다.
+  - commitNow()를 사용하면 UI thread에서 즉시 실행될 수 있다.
+- commitNow()는 addToBackStack과 함께 사용할 수 없다.
+  - 대신 executePendingTransactions()을 통해서 commit()을 통해 submit된 모든 pending FragmentTransactions을 실행할 수 있고 addToBack을 사용할 수 있다.<sup id="r10">[10)](#f10)</sup>
+
+### [Limit the fragments' lifecycle]
+- FragmentTransactions은 transaction 범위 내에 추가된 각각의 fragment의 lifecycle state에 영향을 줄 수 있다.
+  - FragmentTransaction을 create할 때 주어진 fragment에 setMaxLifecycle()을 통해 maximum state를 설정한다.
+
+### [Showing and hiding fragment's views]
+- FragmentTransaction method인 show(), hide()를 사용하여 container에 add된 fragment의 view를 show, hide할 수 있다.
+  - 이 method는 fragment lifecycle에 영향을 주지 않고 fragment views의 visibility를 설정한다.
+
+### [Attaching and detaching fragments]
+- FragmentTransaction method detach()는 UI로부터 fragment를 detach하고 view hierarchy를 destroy한다.
+  - fragment는 back stack에 put됐을 때와 같은 STOPPED 상태에 머무른다.
+  - 즉, UI로부터 fragment는 제거됐지만 fragment manager가 계속 관리한다는 뜻이다.
+- attach()는 detach됐던 fragment를 reattach하는 것이다.
+  - view hierarchy가 recreate되고 UI에 attach되고 display된다.
+- FragmentTransaction은 single atomic operation으로 취급되기 때문에 same fragment instance에 대해 same transaction에서 detach, attach를 호출하면 효과적으로 서로를 cancel해서 fragment's UI의 destruction과 immediate recreation을 막는다.
+  - 만약 detach하고 바로 re-attach하고 싶다면 commit()을 사용한다면 executePendingOperations()를 통해 분리된 transaction을 사용하자.
+
 
 
 
@@ -343,5 +412,14 @@ class MealActivity : AppCompatActivity() {
 - 즉, saveBackStack("name")을 지정하면 name부터 그 위로의 transaction이 하나의 back stack을 구성하고 다른 이름으로 saveBackStack("name2")로 하면 name2부터 그 위로의 transaction이 또 다른 back stack을 구성
 - restorebackStack("name") 하면 save되었던 모든 transaction과 fragment saved sate가 restore
 
-  
+<b id="f10">10) </b>commitNow()와 executePendingTransactions()의 차이는?[↩](#r10)<br>
+- executePendingTransactions()가 먼저 나왔던 method로 pending된 모든 transaction을 전부 즉시 실행한다.(main thread에서)
+- 이후에 commitNow()가 추가되었는데 이는 지정한 한 개의 transaction에 대해서만 즉시 실행한다.
+  - 따라서, 원하는 실행보다 더 많은 transaction이 실행되는 것으르 막아준다.
+- 단, commitNow()는 addToBackStack을 사용할 수 없다.
+  - executePendingTransactions()는 pending된 모든 transactions를 실행하기 때문에 순서를 보장해서 addToBackStack 사용이 가능하다.
+  - 하지만 만약 원래 commit한 것이 있었고 이후에 commitNow()를 했다면 commti으로 한 transaction이 비동기이기 때문에 나중에 실행될 수 있어 순서를 보장하기 않기 때문에 commitNow()는 addToBackStack을 사용할 수 없도록 했다.
+  - https://medium.com/@bherbst/the-many-flavors-of-commit-186608a015b1
+
+
 
