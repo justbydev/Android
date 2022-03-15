@@ -368,9 +368,113 @@ fragmentManager.beginTransaction()
   - 만약 detach하고 바로 re-attach하고 싶다면 commit()을 사용한다면 executePendingOperations()를 통해 분리된 transaction을 사용하자.
 
 
+## Fragment lifecycle
+- 각 Fragment instance는 각자의 lifecycle을 갖고 있다.
+- lifecycle을 관리하기 위해 Fragment는 LifecycleOwner를 implement하고 getLifecycle() method를 통해 Lifecycle object를 expose한다.
+- LifecycleObserver 대신 Fragment class는 fragment lifecycle의 각 변경에 대응하는 callback method를 포함한다.
+  - onCreate(), onStart(), onResume(), onPause(), onStop(), onDestroy()
+- fragment의 view는 fragment의 Lifecycle과 독립적으로 관리되는 Lifecycle을 가진다.
+- fragment는 getViewLifecycleOwner() or getViewLifecycleOwnerLiveData()<sup id="r11">[11)](#f11)</sup>를 통해 얻을 수 있는 view의 LifecycleOwner를 가지고 있다.
+  - 이런 view의 Lifecycle은 fragment view가 존재할 때만 동작해야 하는 lifeycycle-aware component가 필요할 때 유용하다.
+
+### [Fragments and the fragment manager]
+- fragment가 인스턴스화되면 INITIALIZED state부터 시작한다.
+- fragment가 lifecycle의 나머지 부분을 이행하려면 반드시 FragmentManager에 add되어야 한다.<sup id="r12">[12)](#f12)</sup>
+  - FragmentManager는 fragment가 어떤 state에 있어야 하고 move되어야 하는지 결정하게 된다.
+- FragmentManager는 fragment를 host activity에 attach하고 더 이상 필요하지 않을 때 detach시키는 역할도 한다.
+  - Fragment class는 onAttach(), onDetach(), 2개의 callback method를 가지고 있다.
+  - onAttach()는 fragment가 FragmentManager에 add되고 host activity에 attach될 때 호출된다.
+    - 이 순간 fragment는 active하고 FragmentManger가 lifecycle state를 관리한다.
+    - 이 순간 FragmentManger의 findFragmentById()는 이 fragment를 return한다.
+    - onAttach()는 Lifecycle 상태가 변경되기 전에 항상 호출된다.
+  - onDetach()는 fragment가 FragmentManager로부터 remove되고 host acivity에 detach될 때 호출된다.
+    - 이제 더 이상 fragment는 active하지 않고 findFragmentById()를 통해 fragment를 return받을 수 없다.
+    - onDetach()는 Lifecycle 상태가 변경된 후에 항상 호출된다.
+
+### [Fragment lifecycle states and callbacks]
+- fragment의 lifecycle state를 결정할 때 FragmentManager는 다음 사항을 고려한다.
+  - FragmentManager에 의해 fragment의 maximum state이 결정된다. fragment는 FragmentManager의 state을 넘어서 진행될 수 없다.
+  - setMaxLifecycle()을 통해 fragment의 maximum lifecycle state를 설정할 수 있다.
+  - fragment lifecycle state는 절대 parent보다 앞설 수 없다. 
+    - child fragment가 start되기 전에 parent fragment나 activity가 먼저 start해야 한다.
+    - parent fragment나 activity가 stop되기 전에 child fragment가 먼저 stop되어야 한다.
+- XML에서 < fragment > tag를 사용하지 말아야 한다. 이 tag는 FragmentManager의 state을 넘어서 state가 진행되는 것을 허용한다.
+  - FragmentContainerView를 사용해라.
+
+<img width="378" alt="스크린샷 2022-03-16 오전 12 12 06" src="https://user-images.githubusercontent.com/17876424/158409522-701705be-eaa0-4789-b4b2-bbf129cac752.png">
+
+#### Upward state transitions
+- lifecycle state를 따라 move upward 할 때 먼저 fragment는 new state를 위해 관련 lifecycle callback을 호출한다.
+  - 호출된 callback이 끝나면 관련 Lifecycle.Event가 fragment Lifeycle에 의해 observer에게 emit된다.
+    - 만약 fragment view가 인스턴스화 되었다면 그 뒤를 fragment view Lifecycle이 따른다.
+
+#### Fragment CREATED
+- fragment가 CREATED state에 도달했을 때 fragment는 FragmentManager에 add 됐고 onAttach() method가 이미 호출되었다.
+- fragment의 SavedStateRegistry를 통해 fragment의 saved state를 restore하기에 적합하다.
+  - 아직 fragment view는 create되지 않았기 때문에 fragment view restore는 view가 create된 후에 해야한다.
+- 여기서 onCreate() callback이 호출된다.
+  - onSaveInstanceState()에 의해 저장된 state가 담긴 Bundle argument를 받는다.
+  - 처음 fragment가 create될 때는 null이지만 이후에는 onSaveInstanceState()를 override하지 않아도 항상 non-null이다.
+
+#### Fragment CREATED and View INITIALIZED
+- fragment view의 Lifecycle은 Fragment가 valid View instance를 제공했을 때만 create된다.
+  - fragment constructors에 @LayoutId를 사용하여 자동으로 view를 inflate시킬 수 있다.
+  - onCreateView()에서 fragment의 view를 create하거나 프로그래밍적으로 inflate 할 수도 있다.
+- fragment view가 non-null View로 인스턴스화한 경우에만 View를 fragment에 setting하고 getView()를 통해 받을 수 있다.
+  - 이후 getViewLifecycleOwnerLiveData()가 fragment view에 대응하는 새로운 INITIALIZED LifecycleOwner로 update된다.
+  - 이때, onViewCreated()가 호출된다.
+- 이 시점에 다음과 같은 작업이 적합하다.
+  - view의 initial state set up
+  - fragment view를 update시키는 callback을 실행하는 LiveData instance를 observe하기 시작
+  - RecycleView or ViewPager2의 adapter를 set up
+
+#### Fragment and View CREATED
+- fragment view가 create된 후에 이전 view state가 있다면 restore하고 view의 Lifecycle은 CREATED state로 이동한다.
+- 여기서 fragment view와 연관된 additional state를 restore해야 한다.
+- view lifecycle owner는 observer에게 ON_CREATE event를 emit한다.
+- onViewStateRestored() callback이 호출된다.
+
+#### Fragment and View STARTED
+- 이 state에서는 create되었다면 fragment view가 available하고 fragment의 child FragmentManager에서 FragmentTransaction을 수행하기에 안전하다.
+  - 그렇기에 lifecycle-aware component를 fragment의 STARTED state와 관련짓는 것을 강력히 권장한다.
+- 만약 fragment view가 non-null이라면 fragment Lifecycle이 STARTED로 이동한 후 fragment view Lifecycle도 곧바로 STARTED로 이동한다.
+- onStart() callback이 호출된다.
+
+#### Fragment and View RESUMED
+- fragment가 visible할 때 모든 Animator와 Transition effect은 끝나고 fragment는 user interaction에 대해 준비가 된다.
+  - fragment Lifecycle은 RESUMED state로 이동하고 onResume() callback이 호출된다.
+- fragment가 RESUMED 상태로 이동했다는 것은 user가 이제 fragment와 interact할 수 있다는 것을 나타낸다.
+
+#### Downward state transitions
+- lifecycle state을 따라 move downward할 때 fragment view가 인스턴스화 되었다면 관련 Lifecycle.Event가 fragment view Lifecycle의 observer에게 emit된다.
+  - 그 뒤를 fragment Lifecycle이 따른다.
+- fragment lifecycle event가 emit된 후에 관련 lifecycle callback을 호출한다.
+
+#### Fragment and View STARTED
+- user가 fragment를 벗어자기 시작하고 아직 fragment가 visible할 때 fragment와 fragment view의 Lifecycle이 STARTED state이 되고 ON_PAUSE event를 observer에게 emit한다.
+- fragment는 이후 onPause() callback을 호출한다.
+
+#### Fragment and View CREATED
+- fragment가 더 이상 visible하지 않게 되면 fragment와 view는 CREATED state으로 이동하고 ON_STOP event를 observer에게 emit한다.
+- 이 state transition은 parent activity나 fragment가 stop될 때 뿐 아니라 parent activity나 fragment의 state이 save될 때도 호출된다.
+  - 이는 fragment state가 save되기 전에 ON_STOP event가 호출되는 것을 보장한다.
+  - 이는 ON_STOP event가 child FragmentManager에서 FragmentTransaction을 수행하기 안전한 마지막 지점으로 만들었다.
+- onSaveInstanceState()는 API level에 따라 호출되는 시점이 다르다.
+  - API 28 이전에는 onStop() 이전에 호출되었다.
+  - ApI 28부터 그 이상부터는 onStop() 이후에 호출되었다.
+<img width="595" alt="스크린샷 2022-03-16 오전 1 44 17" src="https://user-images.githubusercontent.com/17876424/158428647-2b9f73ba-f855-4592-8f1f-23310540ed89.png">
+
+#### Fragment CREATED and View DESTROYED
+- 모든 exit animations, transitions가 끝나고 fragment view가 window로부터 detach된 후에 fragment view Lifecycle은 DESTROYED state로 이동하고 ON_DESTROY event를 observer에게 emit한다.
+  - 이후 onDestroyView() callback을 호출한다.
+- 이 시점부터 fragment view는 lifecycle 마지막에 도달했고 getViewLifecycleOwnerLiveData()는 null을 return한다.
+- 이 시점부터 모든 fragment view에 대한 참조는 remove되어야 하고 garbage collected 되어야 한다.
+
+#### Fragment DESTROYED
+- 만약 fragment가 remove되거나 FragmentManager가 destroy되면 fragment Lifecycle은 DESTROYED state으로 이동하고 ON_DESTROY event를 observer에게 보낸다.
+- onDestroy() callback을 호출한다.
 
 
-  
 ## Q&A
 <b id="f1">1) </b>DialogFragment를 dialog helper method 대신 사용할 때의 장점은 무엇일까? [↩](#r1)<br>
 - fragment이기 때문에 fragment의 생명주기를 활용할 수 있다.
@@ -421,5 +525,10 @@ fragmentManager.beginTransaction()
   - 하지만 만약 원래 commit한 것이 있었고 이후에 commitNow()를 했다면 commti으로 한 transaction이 비동기이기 때문에 나중에 실행될 수 있어 순서를 보장하기 않기 때문에 commitNow()는 addToBackStack을 사용할 수 없도록 했다.
   - https://medium.com/@bherbst/the-many-flavors-of-commit-186608a015b1
 
+<b id="f11">11) </b>getViewLifecycleOwnerLiveData()란?[↩](#r11)<br>
+- fragment view의 lifecycle을 observe하는 LiveData를 return
+- onCreateView가 non-null View를 return한 후 new LifecycleOwner가 setting되고 onDestroyView() 후에 null로 setting된다.
+
+<b id="f12">12) </b>transaction method add()가 fragment instance를 FragmentManager에 add하는 것인가?[↩](#r12)<br>
 
 
