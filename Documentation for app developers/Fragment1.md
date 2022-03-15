@@ -264,7 +264,43 @@ fragmentManager.commit {
 - fragment를 add할 때 fragment를 인스턴스화 하고 FragmentTransaction에 add 할 수 있다.
 - fragment transaction을 commit하면 생성했던 fragment instance를 사용한다.
 - 하지만 configuration change에는 actgivity와 모든 fragment가 destroy되고 recreate되는데 FragmentManager가 fragment instance를 recreate하고 host에 attach하고 back stack state를 recreate한다.
-  
+- 기본적으로 FragmentManager는 framework에서 제공하는 FragmentFactory를 사용하여 fragment의 새로운 instance를 인스턴스화 한다.
+  - default factory는 reflection을 사용해서 fragment의 argument가 없는 constructor를 찾아 호출한다.
+  - 즉, default factory를 사용하면 fragment에 parameter로 dependencies를 전달할 수 없다.
+  - 또한, 처음 fragment를 생성할 때 사용한 custom constructor를 recreation에서는 기본적으로 사용되지 않는다.
+- fragment에 dependencies를 제공하기 위해서 혹은 custom constructor를 사용하기 위해서 custom FragmentFactory를 생성하고 FragmentFactory.instantiate를 override해야 한다.
+  - 이후 fragment를 인스턴스화 하기 위해 custom factory로 FragmentManager의 default factory를 override해야 한다.
+```kotlin
+class DessertsFragment(val dessertsRepository: DessertsRepository) : Fragment() {
+    ...
+}
+```
+```kotlin
+class MyFragmentFactory(val repository: DessertsRepository) : FragmentFactory() {
+    override fun instantiate(classLoader: ClassLoader, className: String): Fragment =
+            when (loadFragmentClass(classLoader, className)) {
+                DessertsFragment::class.java -> DessertsFragment(repository)
+                else -> super.instantiate(classLoader, className)
+            }
+}
+```
+```kotlin
+class MealActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        supportFragmentManager.fragmentFactory = MyFragmentFactory(DessertsRepository.getInstance())
+        super.onCreate(savedInstanceState)
+    }
+}
+```
+- instantiate 내에서 Repository dependency가 있는 custom fragment를 creation을 제공하고 그 이외에는 super.instantiate()를 통해 default FragmentFactory로 handle된다.
+- FragmentManager에서 custom factory를 상요할 수 있도록 setting한다.
+  - fragment가 recreate될 때 custom factory가 사용되도록 super.onCreate() 이전에 작성되어야 한다.
+- 이렇게 activity에서 FragmentFactory를 설정하면 activity의 fragments hierarchy 전체에 걸쳐 fragment creation 재정의된다.
+  - 즉, 추가하는 모든 child fragment의 childFragmentManaer가 하위 수준에서 재정의되지 않는 한 여기에서 설정된 custom fragment factory를 사용한다.
+
+
+
+
   
 ## Q&A
 <b id="f1">1) </b>DialogFragment를 dialog helper method 대신 사용할 때의 장점은 무엇일까? [↩](#r1)<br>
