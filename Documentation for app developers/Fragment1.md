@@ -250,9 +250,22 @@ supportFragmentManager.saveBackStack("replacement")
 supportFragmentManager.restoreBackStack("replacement")
 ```
 - transaction이 single, atomic operation으로 restore되기 위해 setReorderingAllowed(true)<sup id="r8">[8)](#f8)</sup>인 transaction에 대해서만 saveBackStack()이 가능하다.
-- addToBackStack()에서 name을 지정하지 않으면 saveBackStack(), restoreBackStack()을 사용할 수 없다.<sup id="r9">[9)](#f9)
+- addToBackStack()에서 name을 지정하지 않으면 saveBackStack(), restoreBackStack()을 사용할 수 없다.<sup id="r9">[9)](#f9)</sup>
 
-
+### [Provide dependencies to your fragments]
+```kotlin
+fragmentManager.commit {
+    // Instantiate a new instance before adding
+    val myFragment = ExampleFragment()
+    add(R.id.fragment_view_container, myFragment)
+    setReorderingAllowed(true)
+}
+```
+- fragment를 add할 때 fragment를 인스턴스화 하고 FragmentTransaction에 add 할 수 있다.
+- fragment transaction을 commit하면 생성했던 fragment instance를 사용한다.
+- 하지만 configuration change에는 actgivity와 모든 fragment가 destroy되고 recreate되는데 FragmentManager가 fragment instance를 recreate하고 host에 attach하고 back stack state를 recreate한다.
+  
+  
 ## Q&A
 <b id="f1">1) </b>DialogFragment를 dialog helper method 대신 사용할 때의 장점은 무엇일까? [↩](#r1)<br>
 - fragment이기 때문에 fragment의 생명주기를 활용할 수 있다.
@@ -285,4 +298,14 @@ supportFragmentManager.restoreBackStack("replacement")
 <b id="f9">9) </b>saveBackStack()과 restoreBackStack() 예시 [↩](#r9)<br>
 - 현재 back stack에 A, B 순서대로 add 되어 있다.
 - 그 위에 C, D를 다시 back stack에 add하고 C add시 "C" name 지정
+- saveBackStack("C") 하면 C, D transaction이 다른 back stack으로 move
+- 다시 E를 back stack에 add하고 "E" name 지정하면 A, B, E 순서가 됨
+  - 여기까지 (A, B, E), (C, D) 이렇게 2개의 back stack
+- 이 상황에서 saveBackStack("E") 후 restoreBackStack("C")를 하면
+  - E만 따로 또 다른 back stack으로 move되고 A, B, E 모두 기존  back stack으로 restore
+  - 결론적으로 (A, B, C, D), (E)가 된다.
+- 즉, saveBackStack("name")을 지정하면 name부터 그 위로의 transaction이 하나의 back stack을 구성하고 다른 이름으로 saveBackStack("name2")로 하면 name2부터 그 위로의 transaction이 또 다른 back stack을 구성
+- restorebackStack("name") 하면 save되었던 모든 transaction과 fragment saved sate가 restore
+
+  
 
