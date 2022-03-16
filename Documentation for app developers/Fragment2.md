@@ -322,11 +322,95 @@ class MainActivity : AppCompatActivity() {
 ```
 - host activity가 fragment result를 받으려면 getSupportFragmentManage()를 사용해서 result listener를 set한다.
 
+## Displaying dialogs with DialogFragment
+- DialogFragment는 dialog를 create하고 host하기 design된 special fragment subclass다.
+  - 엄밀히 말하면 fragment 내에 dialog를 host할 필요는 없지만 그렇게 한다면 FragmentManager가 dialog state를 관리하고 configuration change가 발생했을 때 자동으로 dialog를 복원하게 한다.
+
+### [Create a DialogFragment]
+```kotlin
+class PurchaseConfirmationDialogFragment : DialogFragment() {
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
+            AlertDialog.Builder(requireContext())
+                .setMessage(getString(R.string.order_confirmation))
+                .setPositiveButton(getString(R.string.ok)) { _,_ -> }
+                .create()
+
+    companion object {
+        const val TAG = "PurchaseConfirmationDialog"
+    }
+}
+```
+- DialogFragment를 create하기 위해 DialogFragment를 extend하고 onCreateDialog()를 override한다.
+- onCreateView()에서 root view를 create했듯이 onCreateDailog()에서는 diplay할 Dialog를 create한다.
+  - DialogFragment는 fragment lifecycle state에 맞게 Dialog를 display하는 것을 관리한다.
+  - onCreateView()과 비슷하게 any Dialog subclass를 return하고 AlertDialog에만 제한되지 않는다.
+
+### [Showing the DialogFragment]
+```kotlin
+// From another Fragment or Activity where you wish to show this
+// PurchaseConfirmationDialogFragment.
+PurchaseConfirmationDialogFragment().show(
+     childFragmentManager, PurchaseConfirmationDialog.TAG)
+```
+- DialogFragment를 display할 때 FragmentTransaction을 create할 필요 없이 show() method를 사용한다.
+  - FragmentManager reference와 FragmentTransaction tag로 사용할 String을 넘길 수 있다.
+- 만약, fragment안에서 DialogFragment를 create하면 Fragment의 child FragmentManager를 사용해야 한다.<sup id="r2">[2)](#f2)</sup>
+  - configuration change 이후 state가 제대로 restore되기 위해서
+- non-null tag를 사용하면 findFragmentByTag()를 통해 DialogFragment를 받을 수 있다.
+- DialogFragment는 configuration change 이후 자동으로 restore되기 때문에 오직 user action에 의해 show()를 호출하거나 findFragmentByTag()가 null일 때 dialog가 더 이상 존재하지 않는다는 것만 신경쓰면 된다.
+
+### [DialogFragment lifecycle]
+- onCreateDialog()
+  - fragment가 관리하고 display할 수 있도록 Dialog를 제공하는 callback
+- onDismiss()
+  - Dialog가 dismiss될 때 custom logic을 수행해야 할 때 사용하는 callback
+- onCancle()
+  - Dialog가 cancel될 때 custom logic을 수행해야 할 때 사용하는 callback
+- dismiss()
+  - fragment와 그 dialog를 dismiss한다.
+  - 만약 fragment가 back stack에 add되었다면 이 entry를 포함하여 그 위의 모든 back stack state가 pop된다.
+  - 아니라면 fragment를 remove하기 위한 new transaction이 commit된다.
+- setCancellable()
+  - 나타난 Dialog가 cancelable한지 control한다.
+  - Dialog.setCancelable(boolean)을 직접 호출하는 대신 사용해야 한다.
+- DialogFragment를 Dialog와 함께 사용할 때 onCreateView() 또는 onViewCreated()를 override하지 않는다.<sup id="r3">[3)](#f3)</sup>
+  - Dailogs는 view일 뿐 아니라 자체 window를 갖고 있다.
+  - 따라서 onCreateView()를 override하기에는 충분하지 않다.
+  - onCreateView()를 override하고 non-null view를 제공하지 않는 한 custom DialogFragment에서 onViewCreated()는 호출되지 않는다.
+
+### [Using custom views]
+- DialogFragment를 create하고 dialog를 display하려면 onCreateView()를 override한다.
+  - 일반 fragment와 마찬가지로 layoutId을 지정한다.
+  - 혹은 Fragment 1.3.0-alpha02에 도입된 DialogFragment construstor를 사용한다.
+  ```kotlin
+  class MyDialogFragment extends DialogFragment {
+    public MyDialogFragment() {
+      super(R.layout.dialog_fragment_main);
+    }
+  }
+  ```
+- onCreateView()에 return된 View는 자동으로 dialog에 add된다.
+  - default empty dialog가 만든 view로 채워지기 때문에 onCreateDialog()를 override할 필요 없다.
+  
+
 
 
 ## Q&A
 <b id="f1">1) </b>같은 key에 대해 setFragmentResult()를 두 번 이상한 경우 + listener.state != STARTED [↩](#r1)<br>
 - setFragmentResult()를 두 번 이상 했는데 listener state가 STARTED가 아니면 listener callback이 execute하지 않았을 것이다.
 - 그렇게 되면 원래 갖고 있던 result, pending result는 가장 최근에 setFragmentResult()를 해서 pass하는 data, updated data로 replace된다는 뜻
+<b id="f2">2) </b>fragment에서 DialogFragment 사용 시 왜 child FragmentManager를 사용해야 할까?[↩](#r2)<br>
+
+<b id="f3">3) </b> DialogFragment에서의 onCreateView(), onViewCreated()[↩](#r3)<br>
+- DialogFragment를 Dialog와 사용한다는 것은 onCreateDialog()를 통해 Dialog를 return 하는 경우
+  - Dialog는 views 뿐 아니라 own window를 가진다.
+    - 그렇기에 view를 return하고 그 view를 받는 onCreateView(), onViewCreated()를 override하지 않는다.
+  - 게다가 만약 custom DialogFragment를 사용한다는 것은 layout file를 사용하여 view를 inflate시킨다는 것이고 이때는 onCreateView()를 override하고 non-null view를 제공해서 onViewCreated()가 받도록 해야 한다.
+    - onCreateView()를 override하고 non-null view를 제공하지 않으면 onViewCreated()가 호출되지 않는다.
+
+
+
+
+
 
 
