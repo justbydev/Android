@@ -161,4 +161,172 @@ class ChildFragment: Fragment() {
 ```
 - parent fragment와 child fragment끼리 data를 share할 때는 parent fragment를 ViewModel scope로 사용한다.
 
+#### Scoping a ViewModel to the Navigation Graph
+```kotlin
+class ListFragment: Fragment() {
+    // Using the navGraphViewModels() Kotlin property delegate from the fragment-ktx
+    // artifact to retrieve the ViewModel using the NavBackStackEntry scope
+    // R.id.list_fragment == the destination id of the ListFragment destination
+    private val viewModel: ListViewModel by navGraphViewModels(R.id.list_fragment)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.filteredList.observe(viewLifecycleOwner, Observer { item ->
+            // Update the list UI
+        }
+    }
+}
+```
+- 만약 Navigation library를 사용한다면 ViewModel을 destination의 NavBackStackEntry lifecycle에 scope하 수 있다.
+
+### [Get results using the Fragment Result API]
+- Fragment 1.3.0-alpha04부터 각각의 FragmentManager는 FragmentResultOwner를 implement한다.
+  - 즉, FragmentManager가 fragment results를 저장하는 central store 역할을 할 수 있다는 뜻이다.
+  - 이는 fragment results를 setting해서 component끼리 소통을 하고 서로간의 직접적인 reference 없이 results를 알 수 있게 한다.
+
+#### Pass results between fragments
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    // Use the Kotlin extension in the fragment-ktx artifact
+    setFragmentResultListener("requestKey") { requestKey, bundle ->
+        // We use a String here, but any type that can be put in a Bundle is supported
+        val result = bundle.getString("bundleKey")
+        // Do something with the result
+    }
+}
+```
+```java
+@Override
+public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    getParentFragmentManager().setFragmentResultListener("requestKey", this, new FragmentResultListener() {
+        @Override
+        public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle bundle) {
+            // We use a String here, but any type that can be put in a Bundle is supported
+            String result = bundle.getString("bundleKey");
+            // Do something with the result
+        }
+    });
+}
+```
+<img width="725" alt="스크린샷 2022-03-16 오후 8 13 33" src="https://user-images.githubusercontent.com/17876424/158577791-cbbf8973-2314-481d-8c8e-88c9d06db692.png">
+
+- 만약 fragment A가 fragment B로부터 data를 받고 싶다면 fragment A에 result listener를 set한다.
+  - fragment A의 FragmentManager에 setFragmentResultListener()를 call한다.
+```kotlin
+button.setOnClickListener {
+    val result = "result"
+    // Use the Kotlin extension in the fragment-ktx artifact
+    setFragmentResult("requestKey", bundleOf("bundleKey" to result))
+}
+```
+- fragment B에서는 result를 생산하고 같은 FragmentManager에서 같은 requestKey를 사용해서 result를 set한다.
+  - setFragmentResult() API를 사용한다.
+  - 그러면 fragment A는 result를 받고 fragment A가 STARTED가 되면 listener callback이 execute한다.
+
+- 주어진 key에 대해 오직 하나의 listener와 결과를 받을 수 있다.
+- 만약 같은 key에 대해 setFragmentResult()를 두 번 이상 하고 listener가 STARTED가 아니라면 system은 대기중인 result를 update된 result로 replace한다.<sup id="r1">[1)](#f1)</sup>
+- 만약 result를 받을 corresponding listener 없이 result를 set하면 same key를 사용하는 listener가 set될때까지 FragmentManager가 result를 저장하고 있는다.
+- listener가 결과를 수신하여 onFragmentResult() callback을 실행하면 결과는 clear된다.
+- back stack에 있는 Fragments는 pop되어 STARTED가 될 때까지 results를 받지 않는다.
+- 만약 result가 set됐을 때 그 result를 listen하는 fragment가 STARTED라면 listener callback이 바로 실행된다.
+- fragment results는 FragmentManager level에 저장되기 때문에 setFragmentResultListener()나 setFragmentResult()는 parent FragmentManager에 attach되어야 한다.
+
+#### Test fragment results
+- FragmentScenario를 사용해서 setFragmentResult(), setFragmentResultListener()를 테스트한다.
+- launchFragmentInContainer 또는 launchFragment를 사용하여 테스트 중인 fragment의 scenario를 만들고 테스트 중이 아닌 method를 수동으로 호출한다.
+- setFragmentResultListener()를 테스트하려면 이를 호출하는 fragment로 scenario를 만들고 setFragmentResult()를 직접 호출한다.
+```kotlin
+@Test
+fun testFragmentResultListener() {
+    val scenario = launchFragmentInContainer<ResultListenerFragment>()
+    scenario.onFragment { fragment ->
+        val expectedResult = "result"
+        fragment.parentFragmentManager.setFragmentResult("requestKey", bundleOf("bundleKey" to expectedResult))
+        assertThat(fragment.result).isEqualTo(expectedResult)
+    }
+}
+
+class ResultListenerFragment : Fragment() {
+    var result : String? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Use the Kotlin extension in the fragment-ktx artifact
+        setFragmentResultListener("requestKey") { requestKey, bundle ->
+            result = bundle.getString("bundleKey")
+        }
+    }
+}
+```
+- setFragmentResult()를 테스트하려면 이를 호출하는 fragment에서 scenario를 만들고 setFragmentResultListener()를 직접 호출한다.
+```kotlin
+@Test
+fun testFragmentResult() {
+    val scenario = launchFragmentInContainer<ResultFragment>()
+    lateinit var actualResult: String?
+    scenario.onFragment { fragment ->
+        fragment.parentFragmentManager
+                .setFragmentResultListener("requestKey") { requestKey, bundle ->
+            actualResult = bundle.getString("bundleKey")
+        }
+    }
+    onView(withId(R.id.result_button)).perform(click())
+    assertThat(actualResult).isEqualTo("result")
+}
+
+class ResultFragment : Fragment(R.layout.fragment_result) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.findViewById(R.id.result_button).setOnClickListener {
+            val result = "result"
+            // Use the Kotlin extension in the fragment-ktx artifact
+            setFragmentResult("requestKey", bundleOf("bundleKey" to result))
+        }
+    }
+}
+```
+#### Pass results between parent and child fragments
+- child fragment에서 parent로 result를 전달하려면 parent fragment에서 getChildFragmentManager()를 사용해서 setFragmentResultListener()를 호출한다.
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    // We set the listener on the child fragmentManager
+    childFragmentManager.setFragmentResultListener("requestKey") { key, bundle ->
+        val result = bundle.getString("bundleKey")
+        // Do something with the result
+    }
+}
+```
+- child fragment에서는 FragmentManager를 통해 result를 set한다.
+- parent는 fragment가 STARTED일 때 result를 받는다.
+```kotlin
+button.setOnClickListener {
+    val result = "result"
+    // Use the Kotlin extension in the fragment-ktx artifact
+    setFragmentResult("requestKey", bundleOf("bundleKey" to result))
+    //getParentFragmenetManager().setFragmentResult()
+}
+```
+#### Receive results in the host activity
+```kotlin
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        supportFragmentManager
+                .setFragmentResultListener("requestKey", this) { requestKey, bundle ->
+            // We use a String here, but any type that can be put in a Bundle is supported
+            val result = bundle.getString("bundleKey")
+            // Do something with the result
+        }
+    }
+}
+```
+- host activity가 fragment result를 받으려면 getSupportFragmentManage()를 사용해서 result listener를 set한다.
+
+
+
+## Q&A
+<b id="f1">1) </b>같은 key에 대해 setFragmentResult()를 두 번 이상한 경우 + listener.state != STARTED [↩](#r1)<br>
+- setFragmentResult()를 두 번 이상 했는데 listener state가 STARTED가 아니면 listener callback이 execute하지 않았을 것이다.
+- 그렇게 되면 원래 갖고 있던 result, pending result는 가장 최근에 setFragmentResult()를 해서 pass하는 data, updated data로 replace된다는 뜻
+
 
