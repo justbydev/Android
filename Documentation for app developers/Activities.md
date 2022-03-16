@@ -1,4 +1,4 @@
-# Activities
+# Activities(Overview, Lifecycle, State changes, Test)
 ## 참고자료
 [Android Developers: Activities](https://developer.android.com/guide/components/activities/intro-activities)
 ## Introduction to activities
@@ -68,7 +68,9 @@ startActivity(sendIntent)
 ```
 - 만약 manifest에서 같은 permissions을 갖고 있지 않다면 parent activity는 child activity를 launch할 수 없다.
 - 만약 parent activity에서 uses-permission을 선언했다면 각각의 child activity에서도 반드시 matching해야 한다.
-- activity에 permission을 지정했다면 app의 manifest에서도 반드시 uses-permission을 지정해야 한다.<sup id="r2">[2)](#f2)</sup>
+- 만약 내 app에서 social media에 post를 share하는 socialapp을 호출하여 게시물을 공유한다고 하자
+  - socialapp은 자체적으로 manifest에서 SHARE_POST permission을 갖고 있어야 한다.
+  - 내 app 역시 SHARE_POST permission을 설정한 shareapp의 activity를 시작하고 싶다면 그 권한과 일치하는 permission을 지정해야 한다.
 
 ## The Activity Lifecycle
 - Activity class는 activity가 state이 바뀌었음을 알 수 있도록 하는 callbacks를 제공한다.
@@ -97,8 +99,7 @@ startActivity(sendIntent)
   - @OnLifecycleEvent(Lifecycle.EVENT.ON_CREATE)
 - onCreate()에는 setContentView()가 있으며 XML layout file resource ID를 넘겨 화면을 구성한다.
 - XML layout file resource ID 말고 ViewGroup을 넘길 수도 있다.
-  - activity code를 통해 새로운 View object를 생성한다.
-  - 생성한 Views를 ViewGroup에 넣는다.
+  - activity code를 통해 새로운 View objects를 생성하고 ViewGroup에 넣어서 view hierarchy를 구성한다.
   - root인 ViewGroup을 넘겨 새롭게 생성한 Views를 사용하여 화면을 구성하게 된다.
 - onCreate()가 끝나면 Created state에서 Started state가 된다.
 ```kotlin
@@ -143,7 +144,7 @@ override fun onSaveInstanceState(outState: Bundle?) {
 ```
 #### onStart()
 - activity가 Started state가 되었을 때 system은 이 callback을 호출한다.
-- onStart()은 activity가 user에게 visible하게 하고 foreground로 가져오게 한다.
+- onStart()은 activity가 user에게 visible하게 되면서 activity가 foreground로 오고 interactive할 준비를 합니다.
 - activity가 Started state가 되면 lifecycle-aware component는 ON_START event를 받게 된다.
   - @OnLifecycleEvent(Lifecycle.EVENT.ON_START)
 - onStart() method는 굉장히 빨리 끝나며 Resumed state로 넘어가고 onResume()을 호출한다.
@@ -155,7 +156,7 @@ override fun onSaveInstanceState(outState: Bundle?) {
 - activity가 Resumed state가 되면 lifecycle-aware component는 ON_RESUME event를 받게 된다.
   - @OnLifecycleEvent(Lifecycle.EVENT.ON_RESUME)
   - lifecycle component는 component가 visible하고 foreground에 있을 때 해야하는 기능들을 수행하게 된다.
-- interruptive event가 발생하게 되면 activity는 Paused state가 되고 onPause() callback을 호출한다.<sup id="r3">[3)](#f3)</sup>
+- interruptive event가 발생하게 되면 activity는 Paused state가 되고 onPause() callback을 호출한다.<sup id="r2">[2)](#f2)</sup>
 - Paused state에서 Resumed state로 돌아오면 다시 onResume() callback을 호출한다.
   - 그렇기 때문에 onPause()에서 release한 것을 onResume()에서 다시 initialize 해줘야 한다.
 ```kotlin
@@ -180,7 +181,7 @@ class CameraComponent : LifecycleObserver {
     - 하지만 이런 경우 activity가 Paused일 때는 camera가 다른 Resumed 상태인 app에서 access가 거부될 수 있기 때문에 전체적인 user experience를 감소시킬 수 있다.
 - 어떤 event에서 initialization operation을 하든 corresponding한 lifecycle event에서 resource를 해제해야 한다.
   - 만약 ON_START event 후에 initialize했다면 ON_STOP event 후에 해제해야 한다.
-  - 만약 ON_RESUME event 후에 initialize했다면 ON_PAUSE event 후에 해제해야 한다.<sup id="r4">[4)](#f4)</sup>
+  - 만약 ON_RESUME event 후에 initialize했다면 ON_PAUSE event 후에 해제해야 한다.<sup id="r3">[3)](#f3)</sup>
 - 위의 camera initialization code를 onStart(), onStop()과 같은 callbacks에 직접 구현할 수도 있다.
   - 하지만 independent, lifecycle-aware component에 구현하는 것을 추천한다.
   - 이런 logic을 여러 activities에서 재사용한다면 duplicate code를 줄일 수 있다.
@@ -188,8 +189,8 @@ class CameraComponent : LifecycleObserver {
 #### onPause()
 - user가 처음 activity를 벗어난 것을 인식했을 때 system이 호출한다.(벗어난 것이 항상 destroy됐다는 것은 아니다.)
 - 물론 multi-window mode에서는 visible하지만 activity가 더 이상 foreground에 위치하지 않는다는 뜻이다.
-- Activity가 Paused state에 있을 때 계속 실행해서는 안되지만 잠시 후 다시 시작할 operation을 pause하거나 adjust하게 된다.
-  - app execution을 interrupt하는 event
+- onPause() method를 사용하여 Paused state일 때 계속 실행되어서는 안 되지만 잠시 후 다시 시작할 작업을 pause하거나 adjust한다.
+  - 위의 camera 예시처럼 app 실행을 방해하는 event인 경우
   - multi-window mode인 경우 app 중 하나만 focus를 얻기 때문에 다른 app들은 pause한다.
   - dialog와 같이 new, semi-tranparent activity가 생성됐을 경우 기존 activity가 visible하지만 focus를 잃었기 때문에 pause한다.
 - activity가 paused state가 되면 lifecycle-aware component는 ON_PAUSE event를 받게 된다.
@@ -248,7 +249,7 @@ class CameraComponent : LifecycleObserver {
 <img width="763" alt="스크린샷 2022-03-08 오후 1 36 30" src="https://user-images.githubusercontent.com/17876424/157167053-e85ae763-f9cb-462e-a7bc-ca97647e9183.png">
 
 - system은 memory를 위해 직접 activity를 kill하지는 않는다.
-  - activity가 run되는 process를 kill하며 activity 뿐 아니라 그 process에서 running되는 모든 것들을 kill한다.
+  - activity가 run되는 process를 kill하며 activity 뿐 아니라 그 process에서 running되고 있던 모든 것들을 destroy한다.
 
 ### [Saving and restoring transient UI state]
 - configuration change, multi-window mode, 잠깐 다른 app을 갔다가 다시 돌아오는 경우 등에서는 user는 activity UI state가 그대로 유지될 것이라 예상한다.
@@ -283,7 +284,7 @@ companion object {
     val STATE_LEVEL = "playerLevel"
 }
 ```
-- activity가 멈추기 시작하면 onSaveInstanceState()<sup id="r5">[5)](#f5)</sup>가 호출되어 instance state bundle에 state information을 저장한다.
+- activity가 멈추기 시작하면 onSaveInstanceState()<sup id="r4">[4)](#f4)</sup>가 호출되어 instance state bundle에 state information을 저장한다.
   - 기본적으로 activity's view hierarchy state를 저장한다.
 - 예상치 못하게 activity가 destroy된 경우 onSaveInstanceState()를 override하여 필요한 데이터를 Bundle object를 사용하여 저장한다.
   - override 할 때 view hierarchy state 저장을 위해 superclass implementation을 call해야 한다.
@@ -294,8 +295,8 @@ companion object {
   - 둘은 같은 Bundle을 받게 된다.
 - onCreate()가 new instance, recreate 두 상황에서 모두 호출되어 Bundle을 받기 때문에 null 체크를 해줘야 한다.
 - onRestoreInstanceState()를 사용할 수도 있다.
-  - onStart() 다음에 system이 호출한다.<sup id="r6">[6)](#f6)</sup>
-  - 복구할 saved state가 있는 경우에만 호출하기 때문에 Bundle이 null인지 체크할 필요가 없다.
+  - onStart() 다음에 system이 호출한다.<sup id="r5">[5)](#f5)</sup>
+  - 복구할 saved state가 있는 경우에만 system이 호출하기 때문에 Bundle이 null인지 체크할 필요가 없다.
 ```kotlin
 override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
     // Always call the superclass so it can restore the view hierarchy
@@ -332,7 +333,7 @@ startActivity(intent)
 - app이 email sending, status update와 같은 다른 action을 필요로 할 수도 있다.
   - 이런 경우 이런 action을 수행할 activities를 직접 가지기 보다는 다른 app에서 제공하는 activities를 사용할 수 있다.
   - 이때, Intent를 사용하여 수행하고자 하는 action을 정의하고 system이 action에 맞는 다른 app의 activity를 launch한다.
-  - 만약 해당하는 activity가 여러개라면 user가 선택할 수 있다.<sup id="r7">[7)](#f7)</sup>
+  - 만약 해당하는 activity가 여러개라면 user가 선택할 수 있다.<sup id="r6">[6)](#f6)</sup>
 
 #### startActivityForResult()
 ```kotlin
@@ -368,7 +369,7 @@ class MyActivity : Activity() {
   - Integer의 경우 call를 구별해주는 request code
   - result는 onActivityResult(int, int, Intent)를 통해 받게 된다.
 - child activity는 exit할 때 setResult(int)를 호출하게 된다.
-  - Integer는 result code로 RESULT_CANCELED(-1), RESULT_OK(0), or RESULT_FIRST_USER(1)<sup id="rb">[b)](#fb)</sup>로 시작하는 custom value를 사용할 수 있다.
+  - Integer는 result code로 standard result인 RESULT_CANCELED(-1), RESULT_OK(0)을 사용하거나 RESULT_FIRST_USER(1)<sup id="rb">[b)](#fb)</sup>로 시작하는 custom value를 사용할 수 있다.
   - 또한 Intent object에 additional data를 담아서 return할 수 있다.
     -  setResult(int, Intent) 사용
 - 만약 crash와 같은 이유로 child activity가 fail되면 RESULT_CANCELED를 parent activity에게 보낸다.
@@ -385,6 +386,7 @@ class MyActivity : Activity() {
 ### [Configuration change occurs]
 - configuration change(rotation, language changes, etc)가 발생했을 때 activity는 destroy된 후 recreate된다.
 - onPause(), onStart(), onDestroy() 후에 새로운 activity instance가 생성되면서 onCreate(), onStart(), onResume()이 호출된다.
+  - ViewModels, onSaveInstanceState() method, persisten local storage combination을 사용하여 activity의 UI state를 유지한다.
 #### Handle multi-window cases
 - API level 24 이상부터 가능한 multi-window mode에 진입하면 system은 configuration change되었다고 알리고 위와 같이 lifecycle이 변한다.
 - multi-window mode가 resize 되어도 같은 결과가 나타난다.
@@ -412,7 +414,10 @@ class MyActivity : Activity() {
 - 만약 app이 background에 있고 system이 foreground app을 위해 additional memory를 필요로 한다면 background app을 kill할 수 있다.
 
 ## Test your activities
-- activity는 모든 user interaction을 처리하고 lifecycle event에 따라 제대로 된 반응을 하는 것이 중요하기 때문에 device-level events 동안 app's activities를 test하는 것이 중요하다.
+- activity는 모든 user interaction을 처리하고 lifecycle event에 따라 제대로 된 반응을 하는 것이 중요하기 때문에 다음과 같은 device-level events 동안 app's activities를 test하는 것이 중요하다.
+  - device 앱과 같은 다른 앱이 앱의 activity를 중단
+  - system이 activity를 destroy하고 recreate
+  - multi-window와 같이 새로운 windowing 환경에 activity가 놓이는 경우
 ### [Drive an activity's state]
 - activities test에 있어 중요한 측면은 activities를 특정 state에 placing하는 것이다.
 - 여기서는 AndroidX Test library의 ActivityScenario를 사용한다.
@@ -475,6 +480,7 @@ class MyTestSuite {
 }
 ```
 - test하고 있는 activity의 현재 상태를 결정하고 싶다면 ActivityScenario object의 state field 값을 받아온다.
+  - 이는 activity가 다른 activity로 이동하거나 finish되었을 경우의 state을 check할 때 도움이 된다.
 
 #### Recreate the activity
 ```kotlin
@@ -489,6 +495,7 @@ class MyTestSuite {
 ```
 - system이 resource가 모자라 activity를 destroy하는 상황을 simulate하고 싶다면 recreate()를 사용한다.
 - ActivityScenario class는 @NonConfigurationInstance를 사용하여 activity의 saved instance state와 object를 유지한다.
+  - 이렇게 유지된 object는 new activity instance로 ㅣoad된다.
 
 #### Retrieve activity results
 ```kotlin
@@ -506,10 +513,10 @@ class MyTestSuite {
     }
 }
 ```
-- finished activity와 연결된 result code나 data를 받고 싶다면 ActivityScenario object의 result field를 사용한다.
+- finished activity와 연관된 result code나 data를 받고 싶다면 ActivityScenario object의 result field를 사용한다.
 #### Trigger actions in the activity
-- ActivityScenario안에서의 모든 method는 blocking calls이기 때문에 instrumentation thread에서 실행해야 한다.
-- activity의 action을 trigger하려면 Espresso view matchers를 사용한다.
+- ActivityScenario안에서의 모든 method는 blocking calls이기 때문에 API를 사용하려면 instrumentation thread를 실행해야 한다.
+- activity의 action을 trigger하려면 Espresso view matchers를 사용해서 view elements와 interact한다.
 ```kotlin
 @RunWith(AndroidJUnit4::class)
 class MyTestSuite {
@@ -521,6 +528,7 @@ class MyTestSuite {
 }
 ```
 - activity 자체에서 method를 호출해야 한다면 다음과 같이 ActivityAction을 구현한다.
+  - onActivity를 통해 activity에 접근한다.
 ```kotlin
 @RunWith(AndroidJUnit4::class)
 class MyTestSuite {
@@ -547,25 +555,24 @@ class MyTestSuite {
 - [exported](https://developer.android.com/guide/topics/manifest/activity-element#exported)
 
 
-<b id="f2">2) </b> 각각의 activity에 permission하면 uses-permission에도 똑같이 지정해야 한다고 하는데 그러면 굳이 activity마다 permission을 지정할 필요가 있을까?[↩](#r2)<br>
-<b id="f3">3) </b>Paused state라고 되어 있는데 Lifecycle 에서 state 중에 Paused는 없었는데 그냥 onPause()이기에 Paused state라고 한 것일까?[↩](#r3)<br>
-<b id="f4">4) </b> onCreate()와 onDestroy(), onStart()와 onStop(), onResume()과 onPause() 이렇게 짝을 맞춰서 코드를 작성해야 한다.[↩](#r4)<br>
+<b id="f2">2) </b>Paused state라고 되어 있는데 Lifecycle 에서 state 중에 Paused는 없었는데 그냥 onPause()이기에 Paused state라고 한 것일까?[↩](#r2)<br>
+<b id="f3">3) </b> onCreate()와 onDestroy(), onStart()와 onStop(), onResume()과 onPause() 이렇게 짝을 맞춰서 코드를 작성해야 한다.[↩](#r3)<br>
 - 예를 들어 동영상 관련하여 onStart()에서 재생하고 onPause()에서 멈췄다고 하자.
 - multi-window mode에서는 onPause()에서 동영상을 멈춘다.
   - 하지만 focus를 얻을 때 onResume()만 호출되기 때문에 동영상이 다시 재생이 되지 않는다.
 
 
-<b id="f5">5) </b> onSaveInstanceState() 호출되는 경우와 호출되지 않는 경우는? [↩](#r5)<br>
+<b id="f4">4) </b> onSaveInstanceState() 호출되는 경우와 호출되지 않는 경우는? [↩](#r4)<br>
 - activity가 finish되어 완전히 destroy되어 user가 다시 돌아온다고 여겨지지 않는 경우 호출되지 않는다.
   - finish()에 의한 종료나 back button에 의한 수동 종료인 경우 호출되지 않는다.
   - system에 의해 configuration change, memory pressure에 의해 activity가 destroy된 경우 호출된다.
 - 만약 finish될 때 데이터를 저장하기 위해서는 persistent data로 저장해야 하고 이는 onStop()에서 행한다.
 
 
-<b id="f6">6) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r6)<br>
+<b id="f5">5) </b> onRestoreInstanceState()가 onStart() 다음에 호출된다면 onSaveInstanceState()는 어느 시점에 호출될까?[↩](#r5)<br>
 - API Level 28 이전에는 onStop() 이전에 호출되고 이후에는 onStop() 다음에 호출된다.
 
-<b id="f7">7) </b> Intent action에 해당하는 activity 중에서 해당하는 것이 없다면? 선택되는 과정은?[↩](#r7)<br>
+<b id="f6">6) </b> Intent action에 해당하는 activity 중에서 해당하는 것이 없다면? 선택되는 과정은?[↩](#r6)<br>
 - implicit intent를 사용할 때 처리할 app이 전혀 없을 수도 있다.
   - 전혀 없다면 app은 다운되기 때문에 resolveActivity()를 호출해서 처리할 수 있다.
   - null인지 체크해서 null이 아니라면 startActivity()를 해도 안전하다느 뜻이고 null이라면 비활성화 해야 한다.
@@ -611,5 +618,6 @@ public static final int RESULT_LAUNCHED_ROCKETS = RESULT_FIRST_USER + 2; // Defi
 - dialog as activity를 하면 기존 activity가 onPause()까지만 호출되고 되돌아가면 onResume()이 호출되는 것을 확인했다.
 - 그렇다면 back stack에서 Activity가 top에 위치하지 않은 경우를 말하는 것일까?
   - AlertDialog로 화면을 가리고 focus를 얻어도 상관이 없는 것인가?
+
 
 
