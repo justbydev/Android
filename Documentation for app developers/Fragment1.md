@@ -533,5 +533,6 @@ fragmentManager.beginTransaction()
 - onCreateView가 non-null View를 return한 후 new LifecycleOwner가 setting되고 onDestroyView() 후에 null로 setting된다.
 
 <b id="f12">12) </b>transaction method add()가 fragment instance를 FragmentManager에 add하는 것인가?[↩](#r12)<br>
-
+- Fragment transactions의 Adding and removing fragments 파트에서 다음과 같이 되어 있다.
+  - To add a fragment to a FragmentManager, call add() on the transaction
 
