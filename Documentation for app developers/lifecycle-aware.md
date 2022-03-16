@@ -679,5 +679,7 @@ private final Runnable mPostValueRunnable = new Runnable() {
 <b id="f11">11) </b>getPostalCode(address).observe() 이런 형식을 사용해서 호출될 때마다 이전 것을 unregister하고 새로운 것을 register 한다는 뜻일까? [↩](#r11)<br>
 <b id="f12">12) </b> LiveData는 active observer인 상태에서만 update하고 inactive였다가 active 상태가 되면 다시 최신 상태로 update된다고 하는데 내부적으로 어디서 최신 버전으로 update되는 기능이 동작되는 것일까?
 
+## 추가 정리
+[Q&A](https://github.com/justbydev/Android/issues/4)
 
 
