@@ -498,6 +498,9 @@ fragmentManager.beginTransaction()
 <b id="f5">5) </b> 정말 이 같은 상황이라면 어떤 현상이 일어날까?[↩](#r5)<br>
   
 <b id="f6">6) </b> add와 replace의 차이는? add 하지 않고 replace를 먼저 하면 어떻게 될까?[↩](#r6)<br>
+- add는 기존 Fragment를 remove하지 않고 새로운 Fragment만 add하는 것
+- replace는 기존 Fragment를 detach까지 끝낸 다음 새로운 Fragment를 add한다.
+  - 만약 addToBackStack을 했다면 onDestroyView까지만 처리되고 detach되지 않아 FragmentManaer에는 Fragment가 남아있게 된다.
   
 <b id="f7">7) </b> Special considerations for child and sibling fragments[↩](#r7)<br>
 - https://developer.android.com/guide/fragments/fragmentmanager#considerations
