@@ -46,7 +46,7 @@ dependencies {
 ```
 
 ### [Create a fragment class]
-- Fragment를 create하기 위해 AndroidX Fragment class를 extend하고 app logic을 삽입하기 위해 extend한 class의 method를 override한다.
+- Fragment를 create하기 위해 AndroidX Fragment class를 extend하고 app logic을 삽입하기 위해 AndroidX Fragment class의 method를 override한다.
 - 자체적인 layout을 갖는 최소한의 fragment를 create하려면 fragment의 layout resource를 base constructor에 제공한다.
 ```kotlin
 class ExampleFragment : Fragment(R.layout.example_fragment)
