@@ -392,6 +392,226 @@ PurchaseConfirmationDialogFragment().show(
 - onCreateView()에 return된 View는 자동으로 dialog에 add된다.
   - default empty dialog가 만든 view로 채워지기 때문에 onCreateDialog()를 override할 필요 없다.
   
+## Debug your fragments
+### [FragmentManager logging]
+- FragmentManager는 다양한 메시지를 Logcat에 내보낼 수 있다.
+- Logcat에 noise를 보내지 않도록 사용을 중지할 수 있지만 때로는 log message는 fragment와 관련된 troubleshoot issue에 대해 도움을 준다.
+- FragmentManager는 Debug and Verbose log levels에 의미있는 output을 내보낸다.
+```
+adb shell setprop log.tag.FragmentManager DEBUG
+```
+```
+adb shell setprop log.tag.FragmentManager VERBOSE
+```
+- adb shell을 사용하여 logging을 사용할 수 있다.
+- 만약 verbose logging을 사용할 수 있으면 Logcat window에서 log level filter를 적용할 수 있다.
+  - 하지만 FragmentManager log뿐 아니라 모든 log를 filter하기 때문에 log level에서 FragmentManager logging만 사용하는 것이 좋다.
+#### DEBUG logging
+- DEBUG level에서 FragmentManager는 lifecycle state 변경과 관련된 log message를 보낸다.
+- 각 log 항목에는 Fragment의 toString() dump가 포함된다.
+- log 항목은 다음 정보로 구성된다.
+  - Fragment instance의 간단한 class name
+  - Fragment instance의 ID hash code
+  - Fragment instance의 FragmentManager unique ID. configuration change 및 process death, recreation에 있어 안정적이다.
+  - Fragment가 add된 container ID(단, setting되었다면)
+  - Fragment tag(단, setting되었다면
+```
+D/FragmentManager: moveto ATTACHED: NavHostFragment{92d8f1d} (fd92599e-c349-4660-b2d6-0ece9ec72f7b id=0x7f080116)
+```
+  - Fragment class name: NavHostFragment
+  - ID hash hode: 92d8f1d
+  - unique ID: fd92599e-c349-4660-b2d6-0ece9ec72f7b
+  - container ID: 0x7f080116
+  - 현재 tag는 없는데 있다면 tag=tag_value 형식으로 보여준다.
+- 또한 간결성과 가독성을 위해 unique ID가 UUID로 축약되고 모든 fragment instance에 lifecycle state가 접미사로 추가된다.
+```
+D/FragmentManager: movefrom RESUMED: FirstFragment{ccd2189} (<UUID> id=0x7f080116)
+D/FragmentManager: movefrom STARTED: FirstFragment{ccd2189} (<UUID> id=0x7f080116)
+D/FragmentManager: movefrom ACTIVITY_CREATED: FirstFragment{ccd2189} (<UUID> id=0x7f080116)
+D/FragmentManager: moveto ATTACHED: SecondFragment{84132db} (<UUID> id=0x7f080116)
+D/FragmentManager: moveto CREATED: SecondFragment{84132db} (<UUID> id=0x7f080116)
+```
+#### VERBOSE logging
+- VERBOSE level에서 FragmentManager는 주로 internal state를 log message로 보낸다.
+```
+V/FragmentManager: Run: BackStackEntry{f9d3ff3}
+V/FragmentManager: add: NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+V/FragmentManager: Added fragment to active set NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+V/FragmentManager: computeExpectedState() of 1 for NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+D/FragmentManager: moveto ATTACHED: NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+V/FragmentManager: Commit: BackStackEntry{5cfd2ae}
+D/FragmentManager:   mName=null mIndex=-1 mCommitted=false
+D/FragmentManager:   Operations:
+D/FragmentManager:     Op #0: SET_PRIMARY_NAV NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+V/FragmentManager: computeExpectedState() of 1 for NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+D/FragmentManager: moveto CREATED: NavHostFragment{86274b0} (<UUID> id=0x7f080130)
+V/FragmentManager: Commit: BackStackEntry{e93833f}
+D/FragmentManager:   mName=null mIndex=-1 mCommitted=false
+D/FragmentManager:   Operations:
+D/FragmentManager:     Op #0: REPLACE FirstFragment{886440c} (<UUID> id=0x7f080130)
+D/FragmentManager:     Op #1: SET_PRIMARY_NAV FirstFragment{886440c} (<UUID> id=0x7f080130)
+V/FragmentManager: Run: BackStackEntry{e93833f}
+V/FragmentManager: add: FirstFragment{886440c} (<UUID> id=0x7f080130)
+V/FragmentManager: Added fragment to active set FirstFragment{886440c} (<UUID> id=0x7f080130)
+V/FragmentManager: computeExpectedState() of 1 for FirstFragment{886440c} (<UUID> id=0x7f080130)
+D/FragmentManager: moveto ATTACHED: FirstFragment{886440c} (<UUID> id=0x7f080130)
+```
+- VERBOSE level의 log message는 상당수는 앱 개발자에게 거의 쓸모가 없지만 back stack이 변경되는 시점을 확인하면 일부 문제를 debug하는데 도움이 될 수도 있다.
+
+### [StrictMode for fragments]
+- Jetpack Fragment library 1.4.0-alpha01 version부터 fragments StrictMode가 소개되었으며 이는 app에 unexpected하게 동작할 수 있는 common issue를 잡을 수 있다.
+- 기본적으로 Fragment StrictMode에는 아무것도 catch하지 않는 LAX policy가 있지만 custom policy를 만들 수도 있다.
+  - custom policy는 감지할 위반을 감지하고 감지하면 어떤 penalty를 줄지 명시한다.
+  - FragmentManager DEBUG logging을 사용하면 어떤 policy를 사용하든 StrictMode violation을 log할 수 있다.
+- custom StrictMode policy를 적용하려면 FragmentManager에 할당한다.
+  - 할 수 있는 한 빨리 해야 한다.
+```kotlin
+class ExampleActivity : AppCompatActivity() {
+
+    init {
+        supportFragmentManager.strictModePolicy =
+            FragmentStrictMode.Policy.Builder()
+                .penaltyDeath()
+                .detectFragmentReuse()
+                .allowViolation(FirstFragment::class.java,
+                                FragmentReuseViolation::class.java)
+                .build()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val binding = ActivityExampleBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        ...
+   }
+}
+```
+- 만약 strict mode의 사용 가능 여부를 Context를 사용해야 한다면 onContextAvailableListener를 사용한다.
+```kotlin
+class ExampleActivity : AppCompatActivity() {
+
+    init {
+        addOnContextAvailableListener { context ->
+            if(context.resources.getBoolean(R.bool.enable_strict_mode)) {
+                supportFragmentManager.strictModePolicy = FragmentStrictMode.Policy.Builder()
+                    .penaltyDeath()
+                    .detectFragmentReuse()
+                    .allowViolation(FirstFragment::class.java, FragmentReuseViolation::class.java)
+                    .build()
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val binding = ActivityExampleBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        ...
+   }
+}
+```
+- 가능한 모든 violations을 catch하도록 strict mode를 구성해야 하는 가장 마지막 지점은 onCreate()로 super.onCreate() 이전에 해야 한다.
+```kotlin
+class ExampleActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        supportFragmentManager.strictModePolicy = FragmentStrictMode.Policy.Builder()
+            .penaltyDeath()
+            .detectFragmentReuse()
+            .allowViolation(FirstFragment::class.java, FragmentReuseViolation::class.java)
+            .build()
+
+        super.onCreate(savedInstanceState)
+
+        val binding = ActivityExampleBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        ...
+   }
+}
+```
+- 위에서는 FirstFragment에 대한 fragment reuse violation에 대해서만 detect하고 이를 감지하면 app이 종료된다.
+- 특정 violation을 선택적으로 허용할 수도 있다.
+  - 하지만 위 예에서는 이 policy는 다른 모든 fragment type에 대해 violation을 강제한다.
+  - 이는 third-party library component가 StrictMode violations을 포함할 때 유용하다.
+    - 이런 경우 library에서 violation을 수정할 때까지 소유하지 않은 component의 Strict 허용 목록에 이 violation을 일시적으로 추가할 수 있다.
+- 다음은 3가지 penalty type이다.
+  - penaltyLog()는 violation 세부정보를 LogCat에 dump한다.
+  - penaltyDeath()는 violation을 감지하면 앱을 종료한다.
+  - penaltyListener()는 violation 감지할 때마다 호출되는 custom listener를 추가할 수 있다.
+- policy에서 penalty를 원하는 대로 조합해 적용할 수 있다.
+  - 명시하지 않으면 기본값 penaltyLog()가 적용된다.
+  - penaltyLog() 이외의 penalty를 적용하는 경우 penaltyLog()를 명시적으로 설정하지 않으면 penaltyLog() 사용이 중지된다.
+- penaltyListener()는 violation을 logging할 third-party logging library가 있으면 유용하다.
+- 또는, release builds에서 non-critical violation 포착을 설정하고 비정상 종료 보고 library에 logging하는 것이 좋다.
+
+```kotlin
+class MyApplication : Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+
+        FragmentStrictMode.defaultPolicy =
+            FragmentStrictMode.Policy.Builder()
+                .detectFragmentReuse()
+                .detectFragmentTagUsage()
+                .detectRetainInstanceUsage()
+                .detectSetUserVisibleHint()
+                .detectTargetFragmentUsage()
+                .detectWrongFragmentContainer()
+                .apply {
+                    if (BuildConfig.DEBUG) {
+                        // Fail early on DEBUG builds
+                        penaltyDeath()
+                    } else {
+                        // Log to Crashlytics on RELEASE builds
+                        penaltyListener {
+                            FirebaseCrashlytics.getInstance().recordException(it)
+                        }
+                    }
+                }
+                .build()
+    }
+}
+```
+#### Fragment reuse
+- fragment reuse violation은 detectFragmentReuse()를 사용할 수 있고 FragmentReuseViolation을 던진다.
+- 이는 FragmentManager에서 제거된 Fragment instance의 reuse를 나타낸다.
+- 이런 reuse는 Fragment가 이전 state을 유지하며 동작이 일관되지 않을 수 있기 때문에 문제가 발생한다.
+- 매번 새로운 instance를 생성하는 경우 FragmentManager에 instance가 추가될 때 항상 초기 상태가 된다.
+
+#### Fragment tag usage
+- fragment tag usage violation은 detectFragmentTagUsage()를 사용할 수 있고 FragmentTagUsageViolation을 던진다.
+- 이는 XMl layout에서 < fragment > tag를 사용해 Fragment를 inflate할 때를 나타내며 FragmentContainerView를 사용하여 해결할 수 있다.
+  - FragmentContainerView를 사용하면 Fragment transactions, configuration change를 안정적으로 관리할 수 있다.
+
+#### Retain instance usage
+- retain instance usage violation은 detectRetainInstanceUsage()를 사용할 수 있고 RetainInstanceUsageViolation을 던진다.
+- retained Fragment 사용을 나타내며 특히 deprecated된 setRetainInstance(), getRetainInstance()를 호출할 때 나타난다.
+- retained Fragment instance를 관리할 때에는 ViewModel을 사용하여 state을 저장해야 한다.
+
+#### Set user visible hint
+- user visible hint violation은 detectSetUserVisibleHint()를 사용할 수 있고 SetUserVisibleHintViolation를 던진다.
+- 이는 deprecated된 setUserVisibleHint()가 call될 때를 나타낸다.
+  - 만약 이 method를 call하려면 대신 setMaxLifecycle()를 call해야 한다.
+- setMaxLifecycle()을 override하면 true이면 onResume()으로, false이면 onPause()으로 behavior를 move해야 한다.
+
+#### Target fragment usage
+- target fragment usage violation은 detectTargetFragmentUsage()를 사용할 수 있고 TargetFragmentUsageViolation를 던진다.
+- deprecated된 setTargetFragment(), getTargetFragment(), getTargetRequestCode()를 사용할 때 나타나고 대신 FragmentResultListener를 register해야 한다.
+
+#### Wrong fragment container
+- wrong fragment container violation은 detectWrongFragmentContainer()를 사용할 수 있고 WrongFragmentContainerViolation를 던진다.
+- 이는 Fragment를 FragmentContainerView가 아닌 다른 container에 add할 때 나타난다.
+  - Fragment transaction은 FragmentContainerView 내에서 hosting하지 않으면 제대로 동작하지 않을 수도 있다.
+  - 또한, exit animation을 사용하는 fragment를 다른 모든 fragment 위에 그리는 View API 문제 해결에 도움이 된다.
+
+
+
+
+
+
 
 
 
