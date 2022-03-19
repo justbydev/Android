@@ -155,6 +155,11 @@ class ExampleFragment : Fragment(R.layout.example_fragment) {
 - 이 activity는 top-level navigation point를 제공하고 ViewModel 및 fragment 간 다른 view-state 범위를 제공한다.
   - 각 activity의 individual destination은 fragments로 표시되어야 한다.
 - 만약 여러 fragments를 한번에 표시하려면 child fragments와 child fragment manager를 사용해야 한다.
+- child fragment는 다음과 같이 사용할 수 있다.
+  - parent fragment에 ViewPager2를 사용하고 각 screen slide를 child fragment로 구성
+  - 관련된 screen 상에서의 sub-navigation
+  - Jetpack Navigation에서 사용하는 individual destination
+    - activity는 host fragment로 single parent NavHostFragment를 사용하고 이 공간을 서로 다른 child destination fragment로 채운다.
 
 ### [Using the FragmentManager]
 - FragmentManager는 fragment back stack을 관리한다.
