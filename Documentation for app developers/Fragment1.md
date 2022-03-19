@@ -298,8 +298,8 @@ class MealActivity : AppCompatActivity() {
 }
 ```
 - instantiate 내에서 Repository dependency가 있는 custom fragment를 creation을 제공하고 그 이외에는 super.instantiate()를 통해 default FragmentFactory로 handle된다.
-- FragmentManager에서 custom factory를 상요할 수 있도록 setting한다.
-  - fragment가 recreate될 때 custom factory가 사용되도록 super.onCreate() 이전에 작성되어야 한다.
+- FragmentManager에서 custom factory를 사용할 수 있도록 setting한다.
+  - fragment가 recreate될 때 custom factory가 사용되도록 super.onCreate() 이전에 작성되어야 한다.<sup id="rd">[d)](#fd)</sup>
 - 이렇게 activity에서 FragmentFactory를 설정하면 activity의 fragments hierarchy 전체에 걸쳐 fragment creation 재정의된다.
   - 즉, 추가하는 모든 child fragment의 childFragmentManaer가 하위 수준에서 재정의되지 않는 한 여기에서 설정된 custom fragment factory를 사용한다.
 
@@ -566,3 +566,14 @@ fragmentManager.beginTransaction()
   - 이 activity scope이 ViewModel scope이 되고 fragments간의 view state의 scope도 된다.
   - 또한 activity는 여러 fragment로 구성될 수 있고 이런 fragment가 navigation 상에서의 destination이 된다.
 - 여러 fragment를 동시에 보여주려면 activity-host fragment-child fragment로 구성하여 child fragment가 destination fragment가 되고 child fragment manager로 관리된다.
+
+<b id="fd">d) </b> custom factory를 사용한다면 super.onCreate(savedInstanceState) 이전에 fragmentmanager의 fragmentfactory를 지정해야 한다.[↩](#rd)<br>
+- configuration change 등으로 recreate될 때 savedInstanceState를 통해서 restore한다.
+- super.onCreate(savedInstanceState)에서 savedInstanceState를 사용하여 restore하기 때문에 이전에 factory 지정을 안하면 default factory를 통해서 fragment를 restore하게 된다.
+  - 참고로 super.onCreate()에 null을 보내게 되면 restore되지 않는다.
+  - 맨 처음 생성시 savedInstanceState는 null
+
+
+
+
+
