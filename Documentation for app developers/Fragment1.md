@@ -494,6 +494,9 @@ fragmentManager.beginTransaction()
 - 마지막으로 해당 transaction(여기서는 add)를 commit하여 마무리한다.
   
 <b id="f4">4) </b>SavedInstanceState를 통해 fragment가 복원될 때 activity view hierarchy와 마찬가지로 fragment view hierarchy도 전부 복원될까?[↩](#r4)<br>
+- 처음 생성될 때는 savedInstanceState가 null이지만 configuartion change에 의해 recreate될 때는 saved state Bundle이 존재한다.
+- fragmentmanager는 saved state을 이용하여 fragment 뿐 아니라 view hierarchy도 restore한다.
+
 
 <b id="f5">5) </b> 정말 이 같은 상황이라면 어떤 현상이 일어날까?[↩](#r5)<br>
   
