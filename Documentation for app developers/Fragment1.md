@@ -268,7 +268,7 @@ fragmentManager.commit {
 ```
 - fragment를 add할 때 fragment를 인스턴스화 하고 FragmentTransaction에 add 할 수 있다.
 - fragment transaction을 commit하면 생성했던 fragment instance를 사용한다.
-- 하지만 configuration change에는 actgivity와 모든 fragment가 destroy되고 recreate되는데 FragmentManager가 fragment instance를 recreate하고 host에 attach하고 back stack state를 recreate한다.
+- 하지만 configuration change에는 activity와 모든 fragment가 destroy되고 recreate되는데 FragmentManager가 fragment instance를 recreate하고 host에 attach하고 back stack state를 recreate한다.
 - 기본적으로 FragmentManager는 framework에서 제공하는 FragmentFactory를 사용하여 fragment의 새로운 instance를 인스턴스화 한다.
   - default factory는 reflection을 사용해서 fragment의 argument가 없는 constructor를 찾아 호출한다.
   - 즉, default factory를 사용하면 fragment에 parameter로 dependencies를 전달할 수 없다.
