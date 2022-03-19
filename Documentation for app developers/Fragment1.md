@@ -512,6 +512,9 @@ fragmentManager.beginTransaction()
   
 <b id="f7">7) </b> Special considerations for child and sibling fragments[↩](#r7)<br>
 - https://developer.android.com/guide/fragments/fragmentmanager#considerations
+- bottom navigation view를 사용하는 경우를 생각해보자.
+  - 각 tab에 대하여 fragment를 갖고 있고 이 fragment는 host fragment가 되어 여러 child fragment가 마치 layer처럼 겹겹이 쌓일 수 있게 된다.
+  - 각 하나를 primary navigation fragment로 지정하고 그것을 관리하는 fragment manager만이 back stack을 관리하게 된다.
 
 <b id="f8">8) </b>setReorderingAllowed(true)란? [↩](#r8)<br>
 
