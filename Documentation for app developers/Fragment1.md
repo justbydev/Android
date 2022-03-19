@@ -188,7 +188,8 @@ supportFragmentManager.commit {
 - setReorderingAllowed(true)는 animation과 transition이 올바르게 작동하도록 transaction과 관련된 상태 변화를 최적화한다.
 - addToBackStack()은 transaction을 back stack으로 commit한다.
   - Back button을 통해 transaction을 reverse하여 이전 fragment를 다시 가져온다.
-  - single transaction에서 여러 fragment가 add되고 remove되었다면 모든 operation이 undone된다.
+  - single transaction에서 여러 fragment를 add하거나 remove했다.
+    - 이렇게 operation이 이루어졌다면 back stack에서 pop될 때 operation이 undone된다.
   - "name"처럼 이름을 지정할 수 있는데 이를 통해 popBackStack()에서 특정 transaction을 pop back할 수 있다.
 - 만약 remove a fragment without addToBackStack()이라면
   - transaction이 commit되면 removed fragment는 destroy되고 그 fragment로 다시 돌아갈 수 없다.
