@@ -80,7 +80,7 @@ class ExampleFragment : Fragment(R.layout.example_fragment)
 ```
 - activity layout xml에 fragment 추가를 위해 FragmentContainerView를 사용한다.
 - android:name에 인스턴스화될 Fragment class name을 적는다.
-- activity layout이 inflate되면 FragmentContainerView가 inflate되면서 지정한 fragment가 인스턴스화 되며 새롭게 인스턴스화된 fragment에서 onInflate()가 호출된다.
+- activity layout이 inflate되면 FragmentContainerView가 inflate되면서 지정한 fragment가 인스턴스화 되며 새롭게 인스턴스화된 fragment에서 onInflate()가 호출된다.<sup id="ra">[a)](#fa)</sup>
   - 그리고 FragmentManager에 fragment를 add하기 위해 FragmentTransaction이 create된다.
 
 #### Add a fragment programmatically
@@ -92,7 +92,7 @@ class ExampleFragment : Fragment(R.layout.example_fragment)
     android:layout_width="match_parent"
     android:layout_height="match_parent" />
 ```
-- android:name attribute를 사용하지 않고 FragmentTransaction을 사용하여 fragment를 인스턴스화하고 activity layout에 add한다.
+- android:name attribute를 사용하지 않고 FragmentTransaction을 사용하여 fragment를 인스턴스화하고 activity layout에 add한다.<sup id="rb">[b)](#fb)</sup>
 ```kotlin
 class ExampleActivity : AppCompatActivity(R.layout.example_activity) {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -535,4 +535,17 @@ fragmentManager.beginTransaction()
 <b id="f12">12) </b>transaction method add()가 fragment instance를 FragmentManager에 add하는 것인가?[↩](#r12)<br>
 - Fragment transactions의 Adding and removing fragments 파트에서 다음과 같이 되어 있다.
   - To add a fragment to a FragmentManager, call add() on the transaction
+
+## 추가 Q&A
+<b id="fa">a) </b> FragmentContainerView의 name을 통해 activity에 추가시의 lifecycle[↩](#ra)<br>
+- onCreate(Act)->onCreate(Frag)->onStart(Act)->onCreateView(Frag)->onViewCreated(Frag)->onStart(Frag)->onResume(Act)->onResume(Frag)
+- Activity의 onCreate()가 가장 먼저 호출된 후 super.onCreate, setContentView()가 되면서 Activity layout이 inflate되면서 FragmentContainerView도 inflate된다.
+  - 그 후 Fragment가 인스턴스화 되면서 Fragment가 create된다.
+- 추가적으로 FragmentContainerView에 id를 적지 않으면 다음의 exception이 발생한다.
+  - java.lang.IllegalStateException: FragmentContainerView must have an android:id to add Fragment
+
+
+<b id="fb">b) </b> 직접 fragmentmanger에 add하는 경우 lifecycle[↩](#rb)<br>
+- onCreate(Act)->onStart(Act)->onCreate(Frag)->onCreateView(Frag)->onViewCreated(Frag)->onStart(Frag)->onResume(Act)->onResume(Frag)
+
 
