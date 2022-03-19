@@ -150,11 +150,11 @@ class ExampleFragment : Fragment(R.layout.example_fragment) {
   - host FragmentManager에 access하려면 getParentFragmentManager()를 통해 가능하다.
 <img width="728" alt="스크린샷 2022-03-15 오후 1 36 52" src="https://user-images.githubusercontent.com/17876424/158307407-7b098102-80e1-4a78-914b-267f631410bf.png">
 
-#### Child fragments
+#### Child fragments<sup id="rc">[c)](#fc)</sup>
 - 일반적으로 앱은 application project에서 하나 또는 적은 수의 activity로 구성되어야 하며 각 activity는 관련 screen group을 나타낸다
 - 이 activity는 top-level navigation point를 제공하고 ViewModel 및 fragment 간 다른 view-state 범위를 제공한다.
   - 각 activity의 individual destination은 fragments로 표시되어야 한다.
-- 만약 여러 fragmentsf를 한번에 표시하려면 child fragments와 child fragment manager를 사용해야 한다.
+- 만약 여러 fragments를 한번에 표시하려면 child fragments와 child fragment manager를 사용해야 한다.
 
 ### [Using the FragmentManager]
 - FragmentManager는 fragment back stack을 관리한다.
@@ -551,4 +551,10 @@ fragmentManager.beginTransaction()
 <b id="fb">b) </b> 직접 fragmentmanger에 add하는 경우 lifecycle[↩](#rb)<br>
 - onCreate(Act)->onStart(Act)->onCreate(Frag)->onCreateView(Frag)->onViewCreated(Frag)->onStart(Frag)->onResume(Act)->onResume(Frag)
 
-
+<b id="fc">c) </b> Child fragments 파트 [↩](#rc)<br>
+- app은 반드시 하나 또는 몇 개의 activities로 구성된다.
+  - 각각의 activity는 관련된 것들끼리 묶어서 하나의 window를 구성
+  - 또한 activity는 app의 navigation 상 가장 상위에 위치한다.
+  - 이 activity scope이 ViewModel scope이 되고 fragments간의 view state의 scope도 된다.
+  - 또한 activity는 여러 fragment로 구성될 수 있고 이런 fragment가 navigation 상에서의 destination이 된다.
+- 여러 fragment를 동시에 보여주려면 activity-host fragment-child fragment로 구성하여 child fragment가 destination fragment가 되고 child fragment manager로 관리된다.
