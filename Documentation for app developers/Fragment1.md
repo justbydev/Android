@@ -194,8 +194,7 @@ supportFragmentManager.commit {
 - 만약 remove a fragment without addToBackStack()이라면
   - transaction이 commit되면 removed fragment는 destroy되고 그 fragment로 다시 돌아갈 수 없다.
 - 만약 remove a fragment with addToBackStack()이라면
-  - 그 fragment는 STOPPED만 되고 이후에 RESUMED되어 다시 돌아갈 수 있다.
-  - view는 destroy되었다.
+  - 그 fragment는 STOPPED만 되고(view는 destroy되었다) 이후에 navigate back하면 RESUMED되어 다시 돌아갈 수 있다.
 #### Finding an existing fragment
 - findFragmentById()를 통해 현재 layout container에 있는 fragment에 대한 참조를 얻을 수 있다.
 - XML로부터 inflate된 ID나 FragmentTransaction에 add할 때 사용하는 container ID를 사용할 수 있다.
