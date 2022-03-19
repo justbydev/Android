@@ -607,6 +607,157 @@ class MyApplication : Application() {
   - Fragment transaction은 FragmentContainerView 내에서 hosting하지 않으면 제대로 동작하지 않을 수도 있다.
   - 또한, exit animation을 사용하는 fragment를 다른 모든 fragment 위에 그리는 View API 문제 해결에 도움이 된다.
 
+## Test your fragments
+- fragments는 reusable container로써 다양한 activities와 layout configurations에서 같은 user interface layout을 제공할 수 있다.
+- 용도가 다양한 fragment를 고려하면 fragment가 일관되고 resource-efficient한 환경을 제공하는지 검증하는 것은 중요하다.
+  - fragment는 특정 parent activity or fragment에 의존적이면 안된다.
+  - fragment가 user에게 visible하지 않으면 fragment의 view hierarhy를 create해서는 안된다.
+- 위와 같은 조건을 테스트하기 위해 AndroidX fragment-testing library는 FragmentScenario class를 제공하여 fragment를 create하고 Lifecycle.State를 변경한다.
+
+### [Declaring dependencies]
+```Gradle
+dependencies {
+    val fragment_version = "1.4.1"
+
+    debugImplementation("androidx.fragment:fragment-testing:$fragment_version")
+}
+```
+- FragmentScenario를 사용하기 위해 다음과 같이 debugImplementation을 사용하여 정의한다.
+
+### [Create a fragment]
+- FragmentScenario는 다음의 2가지 방법으로 test에서 fragment를 launch한다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        // The "fragmentArgs" argument is optional.
+        val fragmentArgs = bundleOf(“selectedListItem” to 0)
+        val scenario = launchFragmentInContainer<EventFragment>(fragmentArgs)
+        ...
+    }
+}
+```
+- launchInContainer는 fragment의 user interface를 테스트한다.
+- FragmentScenario는 activity의 root view controller한테 fragment를 attach한다.
+  - 이 activity는 그 외의 경우는 empty다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        // The "fragmentArgs" arguments are optional.
+        val fragmentArgs = bundleOf("numElements" to 0)
+        val scenario = launchFragment<EventFragment>(fragmentArgs)
+        ...
+    }
+}
+```
+- launch()는 fragment의 user interface 없이 테스트한다.
+- FragmentScenario는 fragment를 root view가 없는 empty activity에 attach한다.<br><br>
+- 이렇게 2가지 방법으로 launch한 후 FragmentScenario는 기본적으로 fragment를 RESUMED state으로 만든다.
+  - initialState argument를 통해 이를 override할 수도 있다.
+
+### [Provide dependencies]
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        val someDependency = TestDependency()
+        launchFragmentInContainer {
+            EventFragment(someDependency)
+        }
+        ...
+    }
+}
+```
+- 만약 fragment가 dependencies를 갖고 있다면 launchInContainer() or launch() method에 custom FragmentFactory를 제공하여 이 dependencies의 test version을 제공할 수 있다.
+
+### [Drive the fragment to a new state]
+- app의 UI test를 할 때는 RESUMED state에서 해도 충분하지만 lifecycle state이 다른 state으로 transition되는 동작에 대해서 평가를 해야 할수도 있다.
+  - initialState argument를 모든 launchFragment*() method에 전달하여 초기 상태를 지정할 수 있다.
+- fragment를 다른 lifecycle state으로 이동시키려면 moveToState()를 호출한다.
+  - CREATED, STARTED, RESUMED, DESTORYED argument를 지원하며 fragment를 contain하는 fragment or activity라 해당 state으로 변하는 상황을 simulate한다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        val scenario = launchFragmentInContainer<EventFragment>(
+            initialState = Lifecycle.State.INITIALIZED
+        )
+        // EventFragment has gone through onAttach(), but not onCreate().
+        // Verify the initial state.
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        // EventFragment moves to CREATED -> STARTED -> RESUMED.
+        ...
+    }
+}
+```
+### [Recreate the fragment]
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        val scenario = launchFragmentInContainer<EventFragment>()
+        scenario.recreate()
+        ...
+    }
+}
+```
+- 만약 app을 실행중인 device가 resource가 부족하게 되면 fragment를 contain하는 activity를 destroy시킬 수도 있다.
+  - 이런 상황에서 app은 fragment를 recreate하여 return하고 이런 상황을 recreate()를 통해 simulate할 수 있다.
+  - FragmentScenario.recreate()는 fragment를 destroy하고 host와 fragment를 recreate한다.
+  - recreate하면 destroy전의 lifecycle state으로 return된다.
+
+### [Interacting with UI fragments]
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        val scenario = launchFragmentInContainer<EventFragment>()
+        onView(withId(R.id.refresh)).perform(click())
+        // Assert some expected behavior
+        ...
+    }
+}
+```
+- test하의 fragment에서 UI action을 일으키려면 Espresso view matchers를 이용한다.
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testEventFragment() {
+        val scenario = launchFragmentInContainer<EventFragment>()
+        scenario.onFragment { fragment ->
+            fragment.myInstanceMethod()
+        }
+    }
+}
+```
+- 만약 fragment 자체 method를 호출하려면 FragmentScenario.onFragment()를 사용하여 FragmentAction을 전달한다.
+
+### [Test dialog actions]
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class MyTestSuite {
+    @Test fun testDismissDialogFragment() {
+        // Assumes that "MyDialogFragment" extends the DialogFragment class.
+        with(launchFragment<MyDialogFragment>()) {
+            onFragment { fragment ->
+                assertThat(fragment.dialog).isNotNull()
+                assertThat(fragment.requireDialog().isShowing).isTrue()
+                fragment.dismiss()
+                fragment.parentFragmentManager.executePendingTransactions()
+                assertThat(fragment.dialog).isNull()
+            }
+        }
+
+        // Assumes that the dialog had a button
+        // containing the text "Cancel".
+        onView(withText("Cancel")).check(doesNotExist())
+    }
+}
+```
+- FragmentScenario는 dialog fragments testing도 지원한다.
+- dialog fragments는 UI elements를 갖고 있지만 그 layout은 layout 자체가 아닌 별도의 window에 채워지기 때문에 FragmentScenario.launch()를 사용하여 테스트한다.
+
 
 
 
