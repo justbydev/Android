@@ -447,7 +447,7 @@ supportFragmentManager.commit {
 #### Fragment CREATED and View INITIALIZED
 - fragment view의 Lifecycle은 Fragment가 valid View instance를 제공했을 때만 create된다.
   - fragment constructors에 @LayoutId를 사용하여 자동으로 view를 inflate시킬 수 있다.
-  - onCreateView()에서 fragment의 view를 create하거나 프로그래밍적으로 inflate 할 수도 있다.
+  - onCreateView()에서 fragment의 view를 create하거나 프로그래밍적으로 inflate 할 수도 있다.<sup id="ri">[i)](#fi)</sup>
 - fragment view가 non-null View로 인스턴스화한 경우에만 View를 fragment에 setting하고 getView()를 통해 받을 수 있다.
   - 이후 getViewLifecycleOwnerLiveData()가 fragment view에 대응하는 새로운 INITIALIZED LifecycleOwner로 update된다.
   - 이때, onViewCreated()가 호출된다.
@@ -636,8 +636,14 @@ fragmentManager.commit {
 - detach는 view hierarchy는 destroy하지만 fragment는 남아있는 것
   - 그래서 여전히 fragmentmanager가 fragment는 관리하는 것
 
-
-
-
+<b id="fi">i) </b> onCreateView()와 onViewCreated() [↩](#ri)<br>
+- onCreateView() 내에서는 fragment 내의 view가 있다면 view를 inflate하고 non-null view를 return한다.
+- return된 view를 onViewCreated()가 받는다.
+- onCreateView()에서 inflate 할 때 3개의 인수를 받는다.
+  - inflate시키고자 하는 layout resource ID
+  - inflate된 layout의 상위가 될 ViewGroup. 이는 fragment view hierarchy 상위 역할을 할 container가 되고 container를 전달하여 system은 container를 root view로 적용한다.
+  - inflate된 layout이 inflation 과정에서 두번째 변수의 ViewGroup에게 add되어야 하는지를 나타내는 Boolean value. 
+    - 여기서 false로 지정하는데 그 이유는 system이 이미 inflate된 layout을 container 안에 insert하기 때문이다. 
+    - true로 하면 최종 layout에 중복된 Viewgroup을 생성하게 된다.
 
 
