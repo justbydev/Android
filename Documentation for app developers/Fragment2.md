@@ -141,6 +141,7 @@ class FilterFragment : Fragment() {
 - 두 fragment는 모두 ViewModelProvider에서 host activity를 scope으로 사용하고 있다.
   - fragments가 같은 scope을 사용하기 때문에 같은 Viewmodel instance를 받는다.
 - ViewModel은 scope이 지정된 ViewModelStoreOwner가 영구적으로 사라질 때까지 메모리에 유지된다.
+  - single activity architecture에서 ViewModel이 activity에 scope되었다면 그 ViewModel은 기본적으로 singleton이다.
   - ViewModel이 처음 인스턴스화된 후 activity scope을 사용하는 ViewModel을 찾는 subsequent call은 activity lifecycle이 영구적으로 끝날때까지 existing data와 함께 same existing ViewModel을 return한다.
 
 #### Share data between a parent and child fragment
