@@ -44,7 +44,7 @@ public class RandomGoodDeedViewModel : ViewModel() {
 - Viewmodel class는 configuration change로부터 data를 유지한다.
 - fragment가 back stack에 위치한다면 memory에 유지된다.
 - process death and recreation 후 ViewModel이 다시 생성되고 새로운 seed가 생성된다.
-  - 위의 표에서처럼 NonConfig state는 만약 SavedState module을 ViewModel에 추가하면 process death and recreation 상황에서 유지된다.
+  - 위의 표에서처럼 NonConfig state는 만약 SavedState module을 ViewModel에 추가하면 process death and recreation 상황에서 유지된다.<sup id="ra">[a)](#fa)</sup>
 
 
 
@@ -785,7 +785,13 @@ class MyTestSuite {
 
 
 
-
-
+## 추가 Q&A
+<b id="fa">a) </b> NonConfig의 경우 ViewModel의 saved state module을 사용하면 process death and recreation에서도 유지된다.[↩](#ra)<br>
+- ViewModel saved state module을 사용한다는 것은 SavedStateHandle을 사용하는 것
+- 기존 ViewModel의 경우 state을 memory에 저장
+  - 그렇기에 process death되면 전부 destroy된다.
+    - process는 memory에 load되어 실행중인 program이고 모든 요소들을 갖고 있기에 process death 된다는 것은 memory에서 제거되는 것이고 ViewModel은 memory에 저장되어 있기에 destroy
+- SavedStatehandle을 사용하는 것은 Saved Instance state을 사용하는 것으로 disk에 저장
+  - 그래서 process death and recreation에서도 restore된다.
 
 
