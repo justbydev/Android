@@ -332,7 +332,7 @@ fragmentManager.beginTransaction()
 ### [Allow reordering of fragment state changes]
 - 각각의 FragmentTransaction은 setReorderingAllowed(true)를 사용해야 한다.
 - reordering flag가 default는 아니지만 back stack, animations, transitions에 대해 FragmentManager가 FragmentTransaction을 제대로 실행하기 위해 필요하다.
-- 만약 multiple transaction가 함께 실행될 때 add되고 즉시 replace되는 intermediate fragment과 같은 fragment는 lifecycle change 되거나 animation, transition이 실행되지 않는다.
+- reordering flag는 만약 multiple transaction가 함께 실행될 때 add되고 즉시 replace되는 fragment와 같은 intermediate fragment는 lifecycle 변경을 거치지 않거나 animation, transition이 실행되지 않도록 한다.
 
 ### [Adding and removing fragments]
 - fragment를 FragmentManager에 add하려면 transaction의 add()를 호출한다.
