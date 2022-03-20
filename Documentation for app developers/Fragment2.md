@@ -181,7 +181,7 @@ class ListFragment: Fragment() {
     }
 }
 ```
-- 만약 Navigation library를 사용한다면 ViewModel을 destination의 NavBackStackEntry lifecycle에 scope하 수 있다.
+- 만약 Navigation library를 사용한다면 ViewModel을 destination의 NavBackStackEntry lifecycle에 scope할 수 있다.
 
 ### [Get results using the Fragment Result API]
 - Fragment 1.3.0-alpha04부터 각각의 FragmentManager는 FragmentResultOwner를 implement한다.
