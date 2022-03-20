@@ -8,7 +8,7 @@
 - Variables: fragment local variables
 - View State: fragment의 하나 이상의 view가 가진 data
 - SavedState: onSaveInstanceState()에 저장되어야 하는 fragment instance의 고유한 data
-- NonConfig: server or local repository와 같은 외부 소스에서 가져온 data 혹은 commit된 후에 server에게 전송된 user-created data
+- NonConfig: server or local repository와 같은 외부 소스에서 가져온 data 혹은 commit된 후에 server에게 전송되는 user-created data
 
 ### [View state]
 - Views는 그들의 state을 관리해야 한다.
