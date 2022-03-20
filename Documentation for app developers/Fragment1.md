@@ -426,7 +426,9 @@ supportFragmentManager.commit {
     - parent fragment나 activity가 stop되기 전에 child fragment가 먼저 stop되어야 한다.
 - XML에서 < fragment > tag를 사용하지 말아야 한다. 이 tag는 FragmentManager의 state을 넘어서 state가 진행되는 것을 허용한다.
   - FragmentContainerView를 사용해라.
-
+- fragment가 lifecycle을 따라 진행할 때 그 state에 따라 상하로 진행된다.
+  - fragment가 back stack top에 add될 때는 CREATED, STARTED, RESUMED으로 move upward된다.
+  - fragment가 back stack에서 pop off되면 RESUME, STARTED, CREATED로 move downward되고 최종적으로 DESTROYED된다.
 <img width="378" alt="스크린샷 2022-03-16 오전 12 12 06" src="https://user-images.githubusercontent.com/17876424/158409522-701705be-eaa0-4789-b4b2-bbf129cac752.png">
 
 #### Upward state transitions
