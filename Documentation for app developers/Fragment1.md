@@ -332,7 +332,8 @@ fragmentManager.beginTransaction()
 ### [Allow reordering of fragment state changes]
 - 각각의 FragmentTransaction은 setReorderingAllowed(true)를 사용해야 한다.
 - reordering flag가 default는 아니지만 back stack, animations, transitions에 대해 FragmentManager가 FragmentTransaction을 제대로 실행하기 위해 필요하다.
-- reordering flag는 만약 multiple transaction가 함께 실행될 때 add되고 즉시 replace되는 fragment와 같은 intermediate fragment는 lifecycle 변경을 거치지 않거나 animation, transition이 실행되지 않도록 한다.
+- reordering flag는 만약 multiple transaction가 함께 실행될 때 add되고 즉시 replace되는 fragment와 같은 intermediate fragment는 lifecycle 변경을 거치지 않거나 animation, transition이 실행되지 않도록 한다.<sup id="re">[e)](#fe)</sup>
+- 이 flag는 initial transaction execution과 popBackStack()에 의한 transaction reversing에도 영향을 준다.
 
 ### [Adding and removing fragments]
 - fragment를 FragmentManager에 add하려면 transaction의 add()를 호출한다.
@@ -573,7 +574,8 @@ fragmentManager.beginTransaction()
   - 참고로 super.onCreate()에 null을 보내게 되면 restore되지 않는다.
   - 맨 처음 생성시 savedInstanceState는 null
 
-
-
+<b id="fe">e) </b> 2개의 transaction이 있는데 하나는 fragment A를 add, 다른 하나는 fragment A를 fragment B로 replace하는 것이며 이 2개의 transaction이 동시에 같이 실행되는 상황 [↩](#re)<br>
+- 위 상황에서는 fragment A가 add되자마자 fragment B로 replace되기 때문에 fragment A가 add되자마자 바로 제거되는 불필요한 작업이 실행되는 상황
+- 이런 상황에서 setReorderingAllowed(true)를 하게 되면 불필요한 작업이 실행되지 않고 fragment B만 추가되는 작업만 실행된다.
 
 
