@@ -347,7 +347,7 @@ fragmentManager.beginTransaction()
   - replace()는 container의 fragment에 대해 remove() 후 new fragment를 같은 container에 add하는 것과 같다. 
 - 이러한 FragmentTransaction에서의 변화는 back stack에 add되지 않는다.
   - FragmentTransaction에서 addToBackStack()을 사용해야 한다.
-- 새로운 fragment를 create하는 것과 saved state로부터 fragment를 restore할 때 같은 mechanism을 사용하는 것을 보장하기 위해 fragment operations을 사용할 때 항상 fragment instance보다 Class를 사용할 것을 강력히 권장한다.
+- 새로운 fragment를 create하는 것과 saved state로부터 fragment를 restore할 때 같은 mechanism을 사용하는 것을 보장하기 위해 fragment operations을 사용할 때 항상 fragment instance보다 Class를 사용할 것을 강력히 권장한다.<sup id="rf">[f)](#ff)</sup>
 
 #### Commit is asynchronous
 - commit()은 transaction을 바로 실행하지 않는다.
@@ -577,5 +577,26 @@ fragmentManager.beginTransaction()
 <b id="fe">e) </b> 2개의 transaction이 있는데 하나는 fragment A를 add, 다른 하나는 fragment A를 fragment B로 replace하는 것이며 이 2개의 transaction이 동시에 같이 실행되는 상황 [↩](#re)<br>
 - 위 상황에서는 fragment A가 add되자마자 fragment B로 replace되기 때문에 fragment A가 add되자마자 바로 제거되는 불필요한 작업이 실행되는 상황
 - 이런 상황에서 setReorderingAllowed(true)를 하게 되면 불필요한 작업이 실행되지 않고 fragment B만 추가되는 작업만 실행된다.
+
+<b id="ff">f) </b> add 시 Class를 사용하는 것과 fragment instance를 사용하는 것[↩](#rf)<br> 
+```kotlin
+fragmentManager.commit {
+   add<ExampleFragment>(R.id.fragment_container)
+   setReorderingAllowed(true)
+}
+```
+```kotlin
+fragmentManager.commit {
+    // Instantiate a new instance before adding
+    val myFragment = ExampleFragment()
+    add(R.id.fragment_view_container, myFragment)
+    setReorderingAllowed(true)
+}
+```
+- Class를 사용할 때는 savedInstanceState의 null 여부만 체크해주고 같은 mechanism을 따라가면 된다.
+- fragment instance를 생성해서 사용할 때는 이 fragment instance는 activity 변수가 되어 saved state가 안된다.
+  - 따라서 처음 생성될 때는 새롭게 fragment를 인스턴스화해주고 재생성될 때는 fragmentmanager로부터 findFragmentById or findFragmentByTag를 통해서 instance를 받아와야 한다.
+  - 즉, same mechanism을 사용하지 않게 된다.
+
 
 
