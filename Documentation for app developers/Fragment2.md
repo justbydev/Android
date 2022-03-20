@@ -775,6 +775,8 @@ class MyTestSuite {
 <b id="f1">1) </b>같은 key에 대해 setFragmentResult()를 두 번 이상한 경우 + listener.state != STARTED [↩](#r1)<br>
 - setFragmentResult()를 두 번 이상 했는데 listener state가 STARTED가 아니면 listener callback이 execute하지 않았을 것이다.
 - 그렇게 되면 원래 갖고 있던 result, pending result는 가장 최근에 setFragmentResult()를 해서 pass하는 data, updated data로 replace된다는 뜻
+
+
 <b id="f2">2) </b>fragment에서 DialogFragment 사용 시 왜 child FragmentManager를 사용해야 할까?[↩](#r2)<br>
 
 <b id="f3">3) </b> DialogFragment에서의 onCreateView(), onViewCreated()[↩](#r3)<br>
