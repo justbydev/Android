@@ -393,6 +393,10 @@ supportFragmentManager.commit {
 ## Fragment lifecycle
 - 각 Fragment instance는 각자의 lifecycle을 갖고 있다.
 - lifecycle을 관리하기 위해 Fragment는 LifecycleOwner를 implement하고 getLifecycle() method를 통해 Lifecycle object를 expose한다.
+- Fragment가 Lifecycle을 인식하기 위해 lifecycle-aware component를 사용하 수 있다.
+  - 하지만 LifecycleObserver를 사용하는 대신 Fragment class는 fragment lifecycle 변화에 대응하기 위헤 onCreate(), onStart(), onResume(), onPause(), onStop(), onDestroy()의 callback method를 포함한다.
+
+
 - LifecycleObserver 대신 Fragment class는 fragment lifecycle의 각 변경에 대응하는 callback method를 포함한다.
   - onCreate(), onStart(), onResume(), onPause(), onStop(), onDestroy()
 - fragment의 view는 fragment의 Lifecycle과 독립적으로 관리되는 Lifecycle을 가진다.
