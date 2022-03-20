@@ -356,6 +356,18 @@ fragmentManager.beginTransaction()
 - commitNow()는 addToBackStack과 함께 사용할 수 없다.
   - 대신 executePendingTransactions()을 통해서 commit()을 통해 submit된 모든 pending FragmentTransactions을 실행할 수 있고 addToBack을 사용할 수 있다.<sup id="r10">[10)](#f10)</sup>
 
+#### Operation ordering is significant
+```kotlin
+supportFragmentManager.commit {
+    setCustomAnimations(enter1, exit1, popEnter1, popExit1)
+    add<ExampleFragment>(R.id.container) // gets the first animations
+    setCustomAnimations(enter2, exit2, popEnter2, popExit2)
+    add<ExampleFragment>(R.id.container) // gets the second animations
+}
+```
+- FragmentTransaction 안에서 수행하는 operation 순서는 중요하다.
+  - 특히, setCustomAnimations()를 사용할 경우 그 뒤에 따라오는 모든 fragment operation에 적용된다.
+
 ### [Limit the fragments' lifecycle]
 - FragmentTransactions은 transaction 범위 내에 추가된 각각의 fragment의 lifecycle state에 영향을 줄 수 있다.
   - FragmentTransaction을 create할 때 주어진 fragment에 setMaxLifecycle()을 통해 maximum state를 설정한다.
