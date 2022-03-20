@@ -9,6 +9,8 @@
 - View State: fragment의 하나 이상의 view가 가진 data
 - SavedState: onSaveInstanceState()에 저장되어야 하는 fragment instance의 고유한 data
 - NonConfig: server or local repository와 같은 외부 소스에서 가져온 data 혹은 commit된 후에 server에게 전송되는 user-created data
+- 가끔 variable을 savedstate과 동일하게 취급하지만 위의 테이블에서처럼 차이를 보인다.
+
 
 ### [View state]
 - Views는 그들의 state을 관리해야 한다.
@@ -25,7 +27,7 @@
   - 이 데이터는 fragment의 onCreate(Bundle), onCreateView(LayoutInflater, ViewGroup, Bundle), onViewCreated(View, Bundle)에서 받을 수 있다.
   - 주의할 것은 fragment의 onSaveInstanceState는 host activity의 onSaveInstanceState가 호출될 때만 호출된다.
 - Tip: ViewModel을 사용한다면 SavedStateHandle을 사용할 수 있다.
-
+- 위의 표에서 보았듯 variable은 fragment가 backstack에 위치해도 유지된다. variable을 saved state으로 treat하면 어떠한 destructive operation에서도 유지된다.
 
 ### [NonConfig]
 - NonConfig data는 ViewModel과 같이 fragment 바깥에 위치해야 한다.
@@ -42,7 +44,9 @@ public class RandomGoodDeedViewModel : ViewModel() {
 - Viewmodel class는 configuration change로부터 data를 유지한다.
 - fragment가 back stack에 위치한다면 memory에 유지된다.
 - process death and recreation 후 ViewModel이 다시 생성되고 새로운 seed가 생성된다.
-  - 만약 SavedState module을 ViewModel에 추가하면 process death and recreation 상황에서 유지된다.
+  - 위의 표에서처럼 NonConfig state는 만약 SavedState module을 ViewModel에 추가하면 process death and recreation 상황에서 유지된다.
+
+
 
 ## Communicating with fragments
 - fragment를 재사용하려면 자체 layout과 behavior를 정의하는 완전히 독립적인 구성요소로 각 fragment를 build한다.
