@@ -233,8 +233,9 @@ button.setOnClickListener {
 - 만약 같은 key에 대해 setFragmentResult()를 두 번 이상 하고 listener가 STARTED가 아니라면 system은 대기중인 result를 update된 result로 replace한다.<sup id="r1">[1)](#f1)</sup>
 - 만약 result를 받을 corresponding listener 없이 result를 set하면 same key를 사용하는 listener가 set될때까지 FragmentManager가 result를 저장하고 있는다.
 - listener가 결과를 수신하여 onFragmentResult() callback을 실행하면 결과는 clear된다.
-- back stack에 있는 Fragments는 pop되어 STARTED가 될 때까지 results를 받지 않는다.
-- 만약 result가 set됐을 때 그 result를 listen하는 fragment가 STARTED라면 listener callback이 바로 실행된다.
+- 위와 같은 behavior는 다음의 2가지 주요 영향이 있다.
+  - back stack에 있는 Fragments는 pop되어 STARTED가 될 때까지 results를 받지 않는다.
+  - 만약 result가 set됐을 때 그 result를 listen하는 fragment가 STARTED라면 listener callback이 바로 실행된다.
 - fragment results는 FragmentManager level에 저장되기 때문에 setFragmentResultListener()나 setFragmentResult()는 parent FragmentManager에 attach되어야 한다.
 
 #### Test fragment results
