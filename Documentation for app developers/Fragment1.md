@@ -370,20 +370,24 @@ supportFragmentManager.commit {
 
 ### [Limit the fragments' lifecycle]
 - FragmentTransactions은 transaction 범위 내에 추가된 각각의 fragment의 lifecycle state에 영향을 줄 수 있다.
-  - FragmentTransaction을 create할 때 주어진 fragment에 setMaxLifecycle()을 통해 maximum state를 설정한다.
+  - FragmentTransaction을 create할 때 주어진 fragment에 setMaxLifecycle()<sup id="rg">[g)](#fg)</sup>을 통해 maximum state를 설정한다.
+  - 예를 들어 ViewPager2는 off-screen fragment를 STARTED state으로 limit한다.
+
+
 
 ### [Showing and hiding fragment's views]
 - FragmentTransaction method인 show(), hide()를 사용하여 container에 add된 fragment의 view를 show, hide할 수 있다.
   - 이 method는 fragment lifecycle에 영향을 주지 않고 fragment views의 visibility를 설정한다.
+  - back stack의 transaction과 관련된 visibility state을 변경하고 싶다면 유용하다.
 
 ### [Attaching and detaching fragments]
 - FragmentTransaction method detach()는 UI로부터 fragment를 detach하고 view hierarchy를 destroy한다.
-  - fragment는 back stack에 put됐을 때와 같은 STOPPED 상태에 머무른다.
+  - fragment는 back stack에 put됐을 때와 같은 STOPPED 상태에 머무른다.<sup id="rh">[h)](#fh)</sup>
   - 즉, UI로부터 fragment는 제거됐지만 fragment manager가 계속 관리한다는 뜻이다.
 - attach()는 detach됐던 fragment를 reattach하는 것이다.
   - view hierarchy가 recreate되고 UI에 attach되고 display된다.
 - FragmentTransaction은 single atomic operation으로 취급되기 때문에 same fragment instance에 대해 same transaction에서 detach, attach를 호출하면 효과적으로 서로를 cancel해서 fragment's UI의 destruction과 immediate recreation을 막는다.
-  - 만약 detach하고 바로 re-attach하고 싶다면 commit()을 사용한다면 executePendingOperations()를 통해 분리된 transaction을 사용하자.
+  - 만약 detach하고 바로 re-attach하고 싶다면 seperate transaction을 사용하고 commit()을 사용했다면 executePendingOperations()을 통해 분리한다.
 
 
 ## Fragment lifecycle
@@ -609,6 +613,25 @@ fragmentManager.commit {
 - fragment instance를 생성해서 사용할 때는 이 fragment instance는 activity 변수가 되어 saved state가 안된다.
   - 따라서 처음 생성될 때는 새롭게 fragment를 인스턴스화해주고 재생성될 때는 fragmentmanager로부터 findFragmentById or findFragmentByTag를 통해서 instance를 받아와야 한다.
   - 즉, same mechanism을 사용하지 않게 된다.
+
+
+<b id="fg">g) </b> setMaxLifecycle() [↩](#rg)<br>
+- FragmentManager에게 active fragment의 state의 ceiling을 정하는 것
+- public @NonNull FragmentTransaction setMaxLifecycle(@NonNull Fragment fragment, @NonNull Lifecycle.State state)
+- 만약 fragment가 이미 max로 정한 state 이상이면 correct state로 강제로 down시킨다.
+  - 만약 INITIALIZED로 했는데 이미 그 이상이면 IllegalArgumentException을 던진다.
+  - DESTROYED를 ceiling으로 정하면 IllegalArgumentException을 던진다.
+
+
+<b id="fh">h) </b> remove(), hide(), detach() [↩](#rh)<br>
+- remove는 host로부터 fragment를 완전히 제거하는 것
+  - 이때 container에 추가된 view까지 제거되는 것
+- hide는 단순히 view visibility를 hide하는 것
+- detach는 view hierarchy는 destroy하지만 fragment는 남아있는 것
+  - 그래서 여전히 fragmentmanager가 fragment는 관리하는 것
+
+
+
 
 
 
