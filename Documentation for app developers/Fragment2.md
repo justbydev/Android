@@ -312,6 +312,8 @@ button.setOnClickListener {
     //getParentFragmenetManager().setFragmentResult()
 }
 ```
+<img width="607" alt="스크린샷 2022-03-20 오후 4 46 13" src="https://user-images.githubusercontent.com/17876424/159153136-2d9808ea-748e-450d-be75-0ba74cab6ca5.png">
+
 #### Receive results in the host activity
 ```kotlin
 class MainActivity : AppCompatActivity() {
