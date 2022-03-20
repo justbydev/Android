@@ -463,15 +463,17 @@ supportFragmentManager.commit {
 - onViewStateRestored() callback이 호출된다.
 
 #### Fragment and View STARTED
-- 이 state에서는 create되었다면 fragment view가 available하고 fragment의 child FragmentManager에서 FragmentTransaction을 수행하기에 안전하다.
+- 이 state은 fragment view가 create되었다면 fragment view가 available하고 fragment의 child FragmentManager에서 FragmentTransaction을 수행하기에 안전하다.
   - 그렇기에 lifecycle-aware component를 fragment의 STARTED state와 관련짓는 것을 강력히 권장한다.
 - 만약 fragment view가 non-null이라면 fragment Lifecycle이 STARTED로 이동한 후 fragment view Lifecycle도 곧바로 STARTED로 이동한다.
+  - ViewPager2는 offscreen fragment의 maximum Lifecycle을 STARTED로 설정한다.
 - onStart() callback이 호출된다.
 
 #### Fragment and View RESUMED
 - fragment가 visible할 때 모든 Animator와 Transition effect은 끝나고 fragment는 user interaction에 대해 준비가 된다.
   - fragment Lifecycle은 RESUMED state로 이동하고 onResume() callback이 호출된다.
 - fragment가 RESUMED 상태로 이동했다는 것은 user가 이제 fragment와 interact할 수 있다는 것을 나타낸다.
+  - fragment가 RESUMED이 아니면 view의 focus를 세팅하거나 input method visiblity를 handle해서는 안된다.
 
 #### Downward state transitions
 - lifecycle state을 따라 move downward할 때 fragment view가 인스턴스화 되었다면 관련 Lifecycle.Event가 fragment view Lifecycle의 observer에게 emit된다.
@@ -479,7 +481,7 @@ supportFragmentManager.commit {
 - fragment lifecycle event가 emit된 후에 관련 lifecycle callback을 호출한다.
 
 #### Fragment and View STARTED
-- user가 fragment를 벗어자기 시작하고 아직 fragment가 visible할 때 fragment와 fragment view의 Lifecycle이 STARTED state이 되고 ON_PAUSE event를 observer에게 emit한다.
+- user가 fragment를 벗어나기 시작하고 아직 fragment가 visible할 때 fragment와 fragment view의 Lifecycle이 STARTED state이 되고 ON_PAUSE event를 observer에게 emit한다.
 - fragment는 이후 onPause() callback을 호출한다.
 
 #### Fragment and View CREATED
@@ -489,7 +491,7 @@ supportFragmentManager.commit {
   - 이는 ON_STOP event가 child FragmentManager에서 FragmentTransaction을 수행하기 안전한 마지막 지점으로 만들었다.
 - onSaveInstanceState()는 API level에 따라 호출되는 시점이 다르다.
   - API 28 이전에는 onStop() 이전에 호출되었다.
-  - ApI 28부터 그 이상부터는 onStop() 이후에 호출되었다.
+  - API 28부터 그 이상부터는 onStop() 이후에 호출되었다.
 <img width="595" alt="스크린샷 2022-03-16 오전 1 44 17" src="https://user-images.githubusercontent.com/17876424/158428647-2b9f73ba-f855-4592-8f1f-23310540ed89.png">
 
 #### Fragment CREATED and View DESTROYED
