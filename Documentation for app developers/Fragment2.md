@@ -587,6 +587,8 @@ class MyApplication : Application() {
     }
 }
 ```
+- 위 예시는 global StrictMode policy를 설정한 예시
+  - FragmentStrictMode.setDefaultPolicy()를 통해 모든 FragmentManager instance에 default policy를 설정한다.
 #### Fragment reuse
 - fragment reuse violation은 detectFragmentReuse()를 사용할 수 있고 FragmentReuseViolation을 던진다.
 - 이는 FragmentManager에서 제거된 Fragment instance의 reuse를 나타낸다.
