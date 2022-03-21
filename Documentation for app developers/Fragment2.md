@@ -524,7 +524,7 @@ class ExampleActivity : AppCompatActivity() {
    }
 }
 ```
-- 가능한 모든 violations을 catch하도록 strict mode를 구성해야 하는 가장 마지막 지점은 onCreate()로 super.onCreate() 이전에 해야 한다.
+- 가능한 모든 violations을 catch하도록 strict mode를 구성해야 하는 가장 마지막 지점은 onCreate()로 super.onCreate() 이전에 해야 한다.<sup id="rc">[c)](#fc)</sup>
 ```kotlin
 class ExampleActivity : AppCompatActivity() {
 
@@ -814,8 +814,10 @@ class MyTestSuite {
   - back button에 의해 종료되지 않으려면 setCancelable(false)를 사용
   - onCancleListener가 register 되어 있다면 call된 후 Dailog dismiss 호출
 
-
-
+<b id="fc">c) </b> fragmentmanager strictmode를 super.onCreate() 이전에 설정[↩](#rc)<br>
+- fragmentmanager strictmode를 설정하는 가장 마지마 지점은 onCreate() 내의 super.onCreate() 이전
+- process recreate 될 때 super.onCreate(SavedInstanceState)를 통해 fragmentmanager가 fragment를 restore
+  - 그렇기 때문에 그 이전에 fragmentmanager strictmode를 설정해야 한다.
 
 
 
