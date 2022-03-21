@@ -374,9 +374,10 @@ PurchaseConfirmationDialogFragment().show(
   - fragment가 관리하고 display할 수 있도록 Dialog를 제공하는 callback
 - onDismiss()
   - Dialog가 dismiss될 때 custom logic을 수행해야 할 때 사용하는 callback
+  - resource release, observable resource unsubscribe 등의 custom logic
 - onCancle()
   - Dialog가 cancel될 때 custom logic을 수행해야 할 때 사용하는 callback
-- dismiss()
+- dismiss()<sup id="rb">[b)](#fb)</sup>
   - fragment와 그 dialog를 dismiss한다.
   - 만약 fragment가 back stack에 add되었다면 이 entry를 포함하여 그 위의 모든 back stack state가 pop된다.
   - 아니라면 fragment를 remove하기 위한 new transaction이 commit된다.
@@ -805,5 +806,16 @@ class MyTestSuite {
     - process는 memory에 load되어 실행중인 program이고 모든 요소들을 갖고 있기에 process death 된다는 것은 memory에서 제거되는 것이고 ViewModel은 memory에 저장되어 있기에 destroy
 - SavedStatehandle을 사용하는 것은 Saved Instance state을 사용하는 것으로 disk에 저장
   - 그래서 process death and recreation에서도 restore된다.
+
+<b id="fb">b) </b> Dialog의 dismiss와 cancle [↩](#rb)<br>
+- dismiss는 Dialog를 안전하게 종료할 때 사용하는 것으로 Dialog button에 의해서 Dialog를 종료시키는 경우
+- cancel은 back button을 눌렀을 때 Dialog를 종료시키는 경우
+  - back button에 의해 종료되지 않으려면 setCancelable(false)를 사용
+  - onCancleListener가 register 되어 있다면 call된 후 Dailog dismiss 호출
+
+
+
+
+
 
 
