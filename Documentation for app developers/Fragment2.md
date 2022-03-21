@@ -609,7 +609,8 @@ class MyApplication : Application() {
 - user visible hint violation은 detectSetUserVisibleHint()를 사용할 수 있고 SetUserVisibleHintViolation를 던진다.
 - 이는 deprecated된 setUserVisibleHint()가 call될 때를 나타낸다.
   - 만약 이 method를 call하려면 대신 setMaxLifecycle()를 call해야 한다.
-- setMaxLifecycle()을 override하면 true이면 onResume()으로, false이면 onPause()으로 behavior를 move해야 한다.
+- 만약 setUserVisibleHint()를 true로 setting하려 했다면 setMaxLifecycle()을 onResume()으로 해야 한다.
+- 만약 setUserVisibleHint()를 false로 setting하려 했다면 setMaxLifecycle()을 onPause()로 해야 한다.
 
 #### Target fragment usage
 - target fragment usage violation은 detectTargetFragmentUsage()를 사용할 수 있고 TargetFragmentUsageViolation를 던진다.
