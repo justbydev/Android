@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
 - host activity가 fragment result를 받으려면 getSupportFragmentManage()를 사용해서 result listener를 set한다.
 
 ## Displaying dialogs with DialogFragment
-- DialogFragment는 dialog를 create하고 host하기 design된 special fragment subclass다.
+- DialogFragment는 dialog를 create하고 host하도록 design된 special fragment subclass다.
   - 엄밀히 말하면 fragment 내에 dialog를 host할 필요는 없지만 그렇게 한다면 FragmentManager가 dialog state를 관리하고 configuration change가 발생했을 때 자동으로 dialog를 복원하게 한다.
 
 ### [Create a DialogFragment]
@@ -352,6 +352,8 @@ class PurchaseConfirmationDialogFragment : DialogFragment() {
 - onCreateView()에서 root view를 create했듯이 onCreateDailog()에서는 diplay할 Dialog를 create한다.
   - DialogFragment는 fragment lifecycle state에 맞게 Dialog를 display하는 것을 관리한다.
   - onCreateView()과 비슷하게 any Dialog subclass를 return하고 AlertDialog에만 제한되지 않는다.
+- DialogFragment는 Dialog.setOnCancelListener(), Dialog.setOnDismissListener() callback을 갖고 있기 때문에 set하지 않아도 된다.
+  - 이 event를 조작하려면 onCancel(), onDismiss()를 override한다.
 
 ### [Showing the DialogFragment]
 ```kotlin
