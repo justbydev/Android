@@ -426,7 +426,7 @@ adb shell setprop log.tag.FragmentManager VERBOSE
   - Fragment instance의 ID hash code
   - Fragment instance의 FragmentManager unique ID. configuration change 및 process death, recreation에 있어 안정적이다.
   - Fragment가 add된 container ID(단, setting되었다면)
-  - Fragment tag(단, setting되었다면
+  - Fragment tag(단, setting되었다면)
 ```
 D/FragmentManager: moveto ATTACHED: NavHostFragment{92d8f1d} (fd92599e-c349-4660-b2d6-0ece9ec72f7b id=0x7f080116)
 ```
