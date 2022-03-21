@@ -811,6 +811,7 @@ class MyTestSuite {
     - process는 memory에 load되어 실행중인 program이고 모든 요소들을 갖고 있기에 process death 된다는 것은 memory에서 제거되는 것이고 ViewModel은 memory에 저장되어 있기에 destroy
 - SavedStatehandle을 사용하는 것은 Saved Instance state을 사용하는 것으로 disk에 저장
   - 그래서 process death and recreation에서도 restore된다.
+- 또한 NonConfig는 server or local respository와 같은 외부 소스에서 가져오는 데이터인데 이는 결국 ViewModel-Repository-Datasource를 통해서 받아와서 UI state에 저장하는 데이터들이기에 NonConfig를 ViewModel을 사용
 
 <b id="fb">b) </b> Dialog의 dismiss와 cancle [↩](#rb)<br>
 - dismiss는 Dialog를 안전하게 종료할 때 사용하는 것으로 Dialog button에 의해서 Dialog를 종료시키는 경우
