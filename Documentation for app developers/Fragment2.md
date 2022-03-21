@@ -391,7 +391,7 @@ PurchaseConfirmationDialogFragment().show(
 
 ### [Using custom views]
 - DialogFragment를 create하고 dialog를 display하려면 onCreateView()를 override한다.
-  - 일반 fragment와 마찬가지로 layoutId을 지정한다.
+  - 일반 fragment와 마찬가지로 onCreateView에게 layoutId을 지정한다.
   - 혹은 Fragment 1.3.0-alpha02에 도입된 DialogFragment construstor를 사용한다.
   ```kotlin
   class MyDialogFragment extends DialogFragment {
@@ -401,7 +401,8 @@ PurchaseConfirmationDialogFragment().show(
   }
   ```
 - onCreateView()에 return된 View는 자동으로 dialog에 add된다.
-  - default empty dialog가 만든 view로 채워지기 때문에 onCreateDialog()를 override할 필요 없다.
+  - default empty dialog가 직접 만든 custom view로 채워지기 때문에 onCreateDialog()를 override할 필요 없다.
+  - BottomSheetDialogFragment의 경우 bottom sheet로 지정된 dialog에 view를 포함한다.
   
 ## Debug your fragments
 ### [FragmentManager logging]
