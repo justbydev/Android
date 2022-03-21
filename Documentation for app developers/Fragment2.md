@@ -556,7 +556,7 @@ class ExampleActivity : AppCompatActivity() {
   - 명시하지 않으면 기본값 penaltyLog()가 적용된다.
   - penaltyLog() 이외의 penalty를 적용하는 경우 penaltyLog()를 명시적으로 설정하지 않으면 penaltyLog() 사용이 중지된다.
 - penaltyListener()는 violation을 logging할 third-party logging library가 있으면 유용하다.
-- 또는, release builds에서 non-critical violation 포착을 설정하고 비정상 종료 보고 library에 logging하는 것이 좋다.
+- 또는, release builds에서 non-critical violation catching을 설정하고 crash reporting library에 logging하는 것이 좋다.
 
 ```kotlin
 class MyApplication : Application() {
