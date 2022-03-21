@@ -783,6 +783,10 @@ class MyTestSuite {
 
 
 <b id="f2">2) </b>fragment에서 DialogFragment 사용 시 왜 child FragmentManager를 사용해야 할까?[↩](#r2)<br>
+- DialogFragment도 결국 Fragment
+- activity에서는 supportFragmentManager를 사용
+- fragment에서 DialogFragment를 생성하는 것은 결국 child fragment를 생성하는 것
+  - 그래서 child FragmentManager 사용
 
 <b id="f3">3) </b> DialogFragment에서의 onCreateView(), onViewCreated()[↩](#r3)<br>
 - DialogFragment를 Dialog와 사용한다는 것은 onCreateDialog()를 통해 Dialog를 return 하는 경우
