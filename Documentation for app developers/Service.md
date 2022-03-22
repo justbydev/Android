@@ -176,6 +176,43 @@ class HelloService : Service() {
   - 여러 request가 동시에 이루어지길 원하면 thread pool을 사용할 수 있다.
 - onStartCommand()의 경우 반드시 integer를 return한다.
   - 이 값은 system이 service를 kill한 경우 system이 어떻게 service를 continue할지를 설명하는 값이다.
+  - START_NOT_STICKY
+    - system이 service를 kill한 후 deliver할 pending intent가 있지 않다면 recreate하지 않는다.
+    - 이 방법은 필요하지 않거나 application이 unfinished job을 단순하게 restart할 때 안전한 option이다.
+  - START_STICKY
+    - system이 service를 kill한 후 service를 recreate하고 onStartCommand()를 호출하지만 last intent를 전달하지 않는다.
+    - service를 시작하는 pending intent가 없다면 null intent와 함께 onStartCommand()를 호출한다.
+      - pending intent가 있으면 그 intent를 deliver한다.
+    - 이는 명령으 실행하지는 않지만 무한히 실행 중이며 작업을 기다리고 있는 media player에 적합하다.
+  - START_REDELIVER_INTENT
+    - system이 service를 kill한 후 service를 recreate하고 service에 전달됐던 last intent와 함께 onStartCommand()를 호출한다.
+    - 모든 pending intent가 차례로 전달된다.
+    - file downloading과 같이 바로 다시 시작해야 하는 job에 적합하다.
+
+#### Starting a service
+```kotlin
+Intent(this, HelloService::class.java).also { intent ->
+    startService(intent)
+}
+```
+- startService()나 startForegroundService()에 Intent를 전달하여 다른 component에서 service를 시작할 수 있다.
+- API level 26 이상부터 app이 foreground에 없으면 background service를 사용하거나 생성하는데 제한이 있다.
+  - 만약 foreground service 생성이 필요하면 startForegroundService()를 사용한다.
+    - 이는 background service를 생성하지만 system에게 service는 foreground에서 진행될 것이라는 것을 알린다.
+    - 생성된 후 5초 이내에 service는 startForeground()를 호출해야 한다.
+- startService()는 바로 return되고 Android system은 service의 onStartCommand()를 호출한다.
+  - 만약 실행중이던 service가 없다면 onCreate()를 먼저 호출한 후 onStartCommand()를 호출한다.
+- 만약 binding을 제공하지 않으면 startService() 함께 전달된 intent가 application component와 service의 유일한 통신 수단이다.
+  - 하지만 만약 service가 result를 돌려보내기를 원한다면 service를 시작하는 client가 getBroadcast()를 통해 broadcast를 위한 PendingIntent를 만들고 이렇게 만든 PendingIntent를 service를 시작하는 Intent를 통해 service에게 전달한다.
+    - 그러면 service는 이 broadcast를 사용하여 result를 전달한다.
+
+#### Stopping a service
+- started service는 반드시 own lifecycle을 관리해야 한다.
+  - system memory를 회복해야 하고 onStartCommand() return 후에도 계속 실행되는 경우를 제외하고는 system은 servic를 stop하거나 destroy하지 않는다.
+  - service는 반드시 stopSelf()를 통해 스스로 멈추거나 다른 component가 stopService()를 호출하여 멈춰야 한다.
+- 만약 onStartCommand()를 통해 동시에 여러 request를 처리해야 하는 경우 start request 처리를 끝낸 뒤에도 service를 중단하면 안된다.
+
+
   
   
 ## Q&A
