@@ -93,8 +93,89 @@
 - 만약 사용자가 실수로 service를 stop하는 것을 방지하려면 < service > element에 android:description을 추가하여 이 service가 무엇이며 어떤 benefits을 제공하는지에 대한 short sentence를 제공한다.
 
 ### [Creating a started service]
+- started service는 다른 component가 startService()를 호출하여 시작하는 service로 onStartCommand()가 호출된다.
+  - Intent를 통해 특정 service를 명시하고 service가 사용할 data를 포함할 수 있다.
+  - onStartCommand()가 Intent를 받는다.
+- service가 시작하면 그 service를 시작한 component와 독립적인 lifecycle을 가진다.
+  - component가 destroy되어도 background에서 계속 run될 수 있다.
+  - 이런 경우 stopSelf()를 통해 직접 끝내거나 다른 component가 stopService()를 통해 끝내야 한다.
+- Service class가 모든 service의 base class다.
+  - 기본적으로 main thread를 사용하므로 activity performance가 느려지지 않도록 new thread를 create하는 것도 중요하다.
+- Android framework는 worker thread를 사용하도록 IntentService를 제공한다.
+  - 이는 한번에 하나씩만 처리한다.
+  - Background execution limits 때문에 Android 8 Oreo 부터는 제대로 동작하지 않을 수 있어서 추천하지는 않는다.
+  - 또한 Android 11부터는 depracted되었다.
+  - IntentService 대신 JobIntentService를 사용할 수 있다.
 
+#### Extending the Service class
+```kotlin
+class HelloService : Service() {
 
+    private var serviceLooper: Looper? = null
+    private var serviceHandler: ServiceHandler? = null
+
+    // Handler that receives messages from the thread
+    private inner class ServiceHandler(looper: Looper) : Handler(looper) {
+
+        override fun handleMessage(msg: Message) {
+            // Normally we would do some work here, like download a file.
+            // For our sample, we just sleep for 5 seconds.
+            try {
+                Thread.sleep(5000)
+            } catch (e: InterruptedException) {
+                // Restore interrupt status.
+                Thread.currentThread().interrupt()
+            }
+
+            // Stop the service using the startId, so that we don't stop
+            // the service in the middle of handling another job
+            stopSelf(msg.arg1)
+        }
+    }
+
+    override fun onCreate() {
+        // Start up the thread running the service.  Note that we create a
+        // separate thread because the service normally runs in the process's
+        // main thread, which we don't want to block.  We also make it
+        // background priority so CPU-intensive work will not disrupt our UI.
+        HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND).apply {
+            start()
+
+            // Get the HandlerThread's Looper and use it for our Handler
+            serviceLooper = looper
+            serviceHandler = ServiceHandler(looper)
+        }
+    }
+
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show()
+
+        // For each start request, send a message to start a job and deliver the
+        // start ID so we know which request we're stopping when we finish the job
+        serviceHandler?.obtainMessage()?.also { msg ->
+            msg.arg1 = startId
+            serviceHandler?.sendMessage(msg)
+        }
+
+        // If we get killed, after returning from here, restart
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        // We don't provide binding, so return null
+        return null
+    }
+
+    override fun onDestroy() {
+        Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show()
+    }
+}
+```
+- 위 예시에서 모든 call은 onStartCommand()가 관리하고 background thread의 Handler에서 작업을 게시한다.
+  - IntentService처럼 이루어지며 모든 request가 순서대로 진행된다.
+  - 여러 request가 동시에 이루어지길 원하면 thread pool을 사용할 수 있다.
+- onStartCommand()의 경우 반드시 integer를 return한다.
+  - 이 값은 system이 service를 kill한 경우 system이 어떻게 service를 continue할지를 설명하는 값이다.
   
   
 ## Q&A
