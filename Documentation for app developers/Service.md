@@ -234,6 +234,86 @@ Intent(this, HelloService::class.java).also { intent ->
   - client는 service와의 interact가 끝나면 unbind를 위해 unbindService()를 호출한다.
   - 더 이상 service에 bound된 client가 없으면 system은 service를 destroy한다.
   
+### [Sending notifications to the user]
+- service가 실행되고 있을 때 Toast Notifications or Status Bar Notifications를 사용하여 user에게 event를 알릴 수 있다.
+  - toast notification은 현재 window surface에 잠깐 나타났다가 사라지는 message
+  - status bar notification은 message와 함께 status bar에 user가 action(activity start와 같은)을 하도록 선택할 수 있는 icon으로 제공
+
+- 보통 background로 file download와 같은 작업을 마치고 user가 그에 act를 할 수 있도록 하는 데에 status bar notification이 best technique다.
+  - user가 expanded view에서 notification을 선택하면 notification은 activity를 시작할 수 있다.
+
+### [Managing the lifecycle of a service]
+- service lifecycle이 activity보다는 simple하지만 user가 인식하지 못하는 background에서 작업이 될 수 있기 때문에 service가 어떻게 create되고 destroy되는지 주의를 기울여야 한다.
+- service lifecycle은 다음과 같이 2가지다.
+  - started service
+    - 다른 component가 startService()를 통해 create된다.
+    - service가 무기한 run 되고 stopSelf()를 통해 스스로 stop해야 한다.
+    - 다른 component가 stopService()를 통해서 stop할 수도 있다.
+    - service가 stop되면 system은 service를 destroy한다.
+  - bound service
+    - 다른 component(a client)가 bindService()를 통해 create된다.
+    - client는 IBinder interface를 통해 service와 소통한다.
+    - client는 unbindService()를 통해 연결을 닫을 수 있다.
+    - 여러 client가 같은 service에 bind될 수 있고 모든 client가 unbind되면 system은 service를 destroy한다.
+      - service가 스스로 stop하지 않아도 된다.
+- 이 두가지 path는 완전히 분리되지 않았다.
+  - 이미 startService()를 통해 시작된 service에 bind할 수도 있다.
+    - 예를 들어 startService()를 통해 background music service를 Intent를 통해 시작했을 때 이후 user가 player를 조작하거나 현재 음악 정보를 얻고 싶을 때 activity가 bindService()를 통해 background music service에 bind될 수 있다.
+    - 이런 경우 모든 client가 unbind되기 전까지는 stopService()나 stopSelf()가 service를 stop하지 않는다.
+
+#### Implementing the lifecycle callbacks
+```kotlin
+class ExampleService : Service() {
+    private var startMode: Int = 0             // indicates how to behave if the service is killed
+    private var binder: IBinder? = null        // interface for clients that bind
+    private var allowRebind: Boolean = false   // indicates whether onRebind should be used
+
+    override fun onCreate() {
+        // The service is being created
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // The service is starting, due to a call to startService()
+        return startMode
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        // A client is binding to the service with bindService()
+        return binder
+    }
+
+    override fun onUnbind(intent: Intent): Boolean {
+        // All clients have unbound with unbindService()
+        return allowRebind
+    }
+
+    override fun onRebind(intent: Intent) {
+        // A client is binding to the service with bindService(),
+        // after onUnbind() has already been called
+    }
+
+    override fun onDestroy() {
+        // The service is no longer used and is being destroyed
+    }
+}
+```
+- service는 lifecycle callback method를 제공한다.
+<img width="534" alt="스크린샷 2022-03-24 오후 1 41 40" src="https://user-images.githubusercontent.com/17876424/159843759-8ad96e6f-dd1d-4aee-a14c-386153347244.png">
+
+- startService()와 bindService()에 의한 service lifeycycle을 분리했지만 어떤 방식으로 service가 시작됐든 client는 그 service에 bind될 수 있다.
+  - onStartCommand()로 처음 시작된 service도 onBind()를 호출받을 수 있다.
+- 이러한 method를 implement하려면 다음의 두 가지 service's lifecycle의 nested loop을 monitor해야 한다.
+  - entire lifetime of a service
+    - onCreate() 호출부터 onDestroy()가 return할 때까지의 시간
+    - onCreate()에서 initial setup을 하고 onDestroy()에서 남은 resource를 해제한다.
+    - onCreate(), onDestroy()는 startService(), bindService() 상관없이 모든 service에서 호출된다.
+  - active lifetime of a service
+    - startService()를 통한 onStartCommand()와 bindService()를 통한 onBind()가 호출되면서 시작한다.
+    - 만약 service가 started service라면 active lifetime은 entire lifetime이 끝날 때와 같은 시간에 끝난다.
+      - onStartCommand() return 후에도 service는 active하다.
+      - service가 bound되어 있지 않다면 started service가 stopSelf() or stopService()를 통해 stop되면 system은 service를 destroy하고 onDestroy() callback만이 receive한다.
+    - 만약 service가 bound되었다면 onUnbind()가 return되면 active lifetime이 끝난다.
+
   
 ## Q&A
 <b id="f1">1) </b> background service restrictions의 예외 사항이 있을까? [↩](#r1)<br>
