@@ -217,7 +217,22 @@ Intent(this, HelloService::class.java).also { intent ->
   - 그러면 만약 stopSelf(int)를 호출할 수 있게 되기 전에 service가 new start request를 받게 되면 ID가 일치하지 않으므로 service는 중단되지 않는다. 
 
 ### [Creating a bound service]
+- bound service는 long-standing connection을 위해 bindService()를 호출하여 application components가 service에 bind되도록 한다.
+  - 일반적으로 startService()를 통해 start하는 것을 허용하지 않는다.
 
+- 다른 component와 service가 application 내에서 interact하거나 interprocess communication을 통해 다른 application에게 현재 application의 기능을 드러낼 떄 bound service를 생성한다.
+- bound service를 생성하기 위해서 service와의 소통을 위한 interface를 정의하는 IBinder를 return하는 onBind() callback method를 implement 해야 한다.
+  - 그러면 다른 application components가 bindService()를 호출하여 해당 interface를 받고 service에 있는 method를 호출하기 시작할 수 있다.
+- 이런 service는 오직 그 service에 bound된 application component를 위해서만 live하기 때문에 bound된 component가 없다면 system은 service를 destroy한다.
+  - onStartCommand()를 통해 start한 service처럼 직접 bound service를 stop할 필요 없다.
+
+- bound service를 시작하려면 client가 service와 어떻게 소통할지 명시하는 interface를 정의해야 한다.
+  - 이 interface는 IBinder implementation이여야 하며 onBind() callback method에서 return해야 한다.
+  - client가 IBinder를 받으면 이 interface를 통해 service와 interact할 수 있다.
+
+- 여러 client가 동시에 service에 bind될 수 있다.
+  - client는 service와의 interact가 끝나면 unbind를 위해 unbindService()를 호출한다.
+  - 더 이상 service에 bound된 client가 없으면 system은 service를 destroy한다.
   
   
 ## Q&A
