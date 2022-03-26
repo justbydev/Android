@@ -314,11 +314,138 @@ class ExampleService : Service() {
       - service가 bound되어 있지 않다면 started service가 stopSelf() or stopService()를 통해 stop되면 system은 service를 destroy하고 onDestroy() callback만이 receive한다.
     - 만약 service가 bound되었다면 onUnbind()가 return되면 active lifetime이 끝난다.
 
-  
+## Foreground services
+- foreground service는 user가 인지할 수 있는 operation을 수행한다.
+  - status bar notification을 보여줘서 app이 foreground에서 어떤 task를 수행하고 있고 system resource를 소모하고 있는지 안다.
+  - notification은 service가 stop되거나 foreground에서 제거되지 않으면 dismiss될 수 없다.
+
+- Android 12(API level 31) 이상의 device는 short-running foreground service를 효율적을 이용할 수 있도록 한다.(provide a streamlined experience)
+  - 이런 device에서는 system이 foreground service와 관련된 notification을 보여주기 전에 10초를 기다린다.
+  - few exceptions은 'services that show a notification immediately'에 설명
+- 이런 foreground service는 다음과 같은 app에서 사용한다.
+  - music player app으로 notification을 통해 현재 재생되고 있는 음악을 보여준다.
+  - fitness app으로 user permission을 받은 후 달리기 기록을 저장하고 notification을 통해 user가 움직인 거리를 보여준다.
+
+- user가 app과 직접적으로 interact하지 않아도 user가 인식해야 하는 task를 수행하는 경우에는 foreground service만을 사용해야 한다.
+  - 만약 minimum-priority notification을 사용하는, 충분히 낮은 중요도를 가진 action이라면 foreground service 대신 background task를 create해라.
+
+### [Services that show a notification immediately]
+- 만약 foreground service가 다음의 특징 중 최소 1개를 가진다면 Android 12 이상의 device여도 system이 service 시작 후 notification을 바로 시작한다.
+  - action button을 포함한 notification과 관련된 service
+  - mediaPlayback, mediaProjection, phoneCall foregroundServiceType을 가진 service
+  - notification의 category attribute가 phone call, navigation, media playback과 관련된 use case를 제공하는 service
+  - notification 설정 시 setForegroundServiceBehavior()에 FOREGROUND_SERVICE_IMMEDIATE을 전달하여 behavior change을 회피(display of the notification will be immediate even if the default behavior would be to defer visibility for a short time)한 service
+
+### [Request the foreground service permission]
+```Gradle
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" ...>
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <application ...>
+        ...
+    </application>
+</manifest>
+```
+- Android 9(API level 28) 이상의 device에서는 foreground service 사용을 위해 반드시 FOREGROUND_SERVICE permission이 필요하다.
+  - 이는 app이 요구하면 system이 자동으로 부여하는 normal permission이다.
+### [Start a foreground service]
+```kotlin
+val intent = Intent(...) // Build the intent for the service
+applicationContext.startForegroundService(intent)
+```
+- 먼저 foreground service로 service를 실행하도록 system에게 요청하기 전에 service 자체를 시작한다.
+```kotlin
+val pendingIntent: PendingIntent =
+        Intent(this, ExampleActivity::class.java).let { notificationIntent ->
+            PendingIntent.getActivity(this, 0, notificationIntent, 0)
+        }
+
+val notification: Notification = Notification.Builder(this, CHANNEL_DEFAULT_IMPORTANCE)
+        .setContentTitle(getText(R.string.notification_title))
+        .setContentText(getText(R.string.notification_message))
+        .setSmallIcon(R.drawable.icon)
+        .setContentIntent(pendingIntent)
+        .setTicker(getText(R.string.ticker_text))
+        .build()
+
+// Notification ID cannot be 0.
+startForeground(ONGOING_NOTIFICATION_ID, notification)
+```
+- service 안에서는 일반적으로 onStartCommand() 안에서 service를 foreground에서 실행하도록 요청할 수 있다.
+  - startForeground()를 호출한다.
+  - status bar에 나타날 notification을 구분하는 positivie integer, Notification object을 parameter로 받는다.
+- status bar notification에서는 PRIORITY_LOW 이상의 priority를 사용해야 한다.
+  - 만약 app이 priority가 낮은 notification을 사용한다면 system은 notification drawer에 message를 추가하여 app의 foreground service 사용에 대해 사용자에게 alert한다.
+
+#### Restrictions on background starts
+- Android 12(API level 31) 이상의 device에서는 background에서 foreground service를 시작할 수 없다.(몇 가지 예외 사항 제외)
+  - 만약 몇 가지의 예외 사항을 만족하지 못한 상태에서 app이 background에서 작동할 때 foreground service를 시작하려고 한다면 ForegroundServiceStartNotAllowedException exception이 발생한다.
+
+#### Exemptions from background start restrictions
+- 다음과 같은 상황에서는 app이 background에서 작동할 때에도 foreground service를 시작할 수 있다.
+  - activity와 같이 사용자가 볼 수 있는 상태에서 전환하는 상황
+  - 기존 task의 back stack에 activity가 있는 경우를 제외하고 background에서 activity를 시작할 수 있는 상황
+  - Firebase Cloud Messaging을 사용하여 high-priority message을 받는 상황
+  - app과 관련된 UI element에서 작업을 수행하는 상황
+    - 예를 들어 bubble, notification, widget, activity과 interact할 수 있다.
+  - user가 요구한 action을 complete하기 위한 exact alarm을 invoke한 상황
+  - app이 device의 현재 input method로 사용하는 app인 상황
+  - app이 geofencing or activity recognition transition 관련 event를 받은 상황
+  - device가 reboot된 후 broadcast receiver로부터 ACTION_BOOT_COMPLETED, ACTION_LOCKED_BOOT_COMPLETED, or ACTION_MY_PACKAGE_REPLACED intent action을 받은 상황
+  - app이 broadcast receiver로부터  ACTION_TIMEZONE_CHANGED, ACTION_TIME_CHANGED, or ACTION_LOCALE_CHANGED intent action을 받은 상황
+  - app이 BLUETOOTH_CONNECT or BLUETOOTH_SCAN permission을 필요로 하는 Bluetooth broadcast을 받은 상황
+  - app이 device owner and profile owner와 같은 특정 system role or permission이 있는 경우
+  - app이 Companion Device Manager를 사용하고 REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND permission or REQUEST_COMPANION_RUN_IN_BACKGROUND permission을 선언하 경우
+  - user가 app의 battery optimization을 끈 경우
+    - ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS intent action을 포함하는 intent를 보내서 system setting에서 App info page에서 위의 설정을 할 수 있다.
+
+### [Remove a service from the foreground]
+- foreground에서 service를 제거하려면 stopForeground()를 호출한다.
+  - 이 method는 status bar notification을 제거할지의 여부를 가리키는 boolean을 받는다.
+  - service는 계속 실행된다.
+- foreground에서 실행할 때 service를 멈추면 notification은 제거된다.
+
+### [Declare foreground service types]
+- 만약 app이 Android 10(API level 29) 이상을 targetting하고 foreground service에서 location information에 접근하고자 한다면 < service > component의 attribute로 foreground service type을 location으로 지정해야 한다.
+- 만약 app이 Android 11(API level 30) 이상을 targetting하고 foreground service에서 camera or microphone에 접근하고자 한다면 < service > component의 attribute로 foreground service type을 camera or microphone으로 지정해야 한다.
+  - 이렇게 지정해도 Android 11에서 나왔던 access restriction은 그대로 적용된다.
+- 기본적으로 runtime 때 startForeground()를 호출하면 system은 app manifest에서 정의한 각각의 service type에 대한 access를 허용한다.
+  - 다음에 나올 예시들처럼 선언된 service type의 subset으로 access를 제한할 수 있다.
+
+#### Example using location and camera
+```Gradle
+<manifest>
+    ...
+    <service ... android:foregroundServiceType="location|camera" />
+</manifest>
+```
+- 만약 foreground service가 device의 location과 camera에 접근해야 한다면 위와 같이 AndroidManifest file에 정의한다.
+
+```kotlin
+val notification: Notification = ...;
+Service.startForeground(notification, FOREGROUND_SERVICE_TYPE_LOCATION)
+```
+- runtime 때 foreground service가 manifest에 정의했던 type 중 일부만 access가 필요하다면 위와 같이 service의 access를 제한할 수 있다.
+
+#### Example using location, camera, and microphone
+```Gradle
+<manifest>
+    ...
+    <service ...
+        android:foregroundServiceType="location|camera|microphone" />
+</manifest>
+```
+- 만약 foreground service가 device의 location, camera, microphone에 접근해야 한다면 위와 같이 AndroidManifest file에 정의한다.
+
+
+
+
+
 ## Q&A
 <b id="f1">1) </b> background service restrictions의 예외 사항이 있을까? [↩](#r1)<br>
 
-<b id="f2">2) </b> worker thread를 만들었는데 그 속에서 servicd를 수행할 필요가 있을까? [↩](#r2)<br>
+<b id="f2">2) </b> worker thread를 만들었는데 그 속에서 service를 수행할 필요가 있을까? [↩](#r2)<br>
 
 
 
