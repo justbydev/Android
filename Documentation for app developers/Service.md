@@ -825,7 +825,8 @@ Intent(this, LocalService::class.java).also { intent ->
   - 따라서 purely a bound service라면 client에 binding되었는지 여부에 따라 Android system이 대신 관리해 주기 때문에 service의 lifecycle을 관리하지 않아도 된다.
 - 하지만 onStartCommand() callback method를 implement한다면 이 service는 started service로 고려하기 때문에 반드시 명시적으로 service를 stop해야 한다.
   - 이런 경우 다른 client가 bound되어 있는지의 여부와 상관없이 스스로 stopSelf()하거나 다른 component가 stopService()를 호출하여 service를 stop할 때까지 run한다.
-- 또한 만약 service가 started되고 binding 한다면 system에서 onUnbind() method를 호출하면 다음에 client가 service에 binding될 때 onRebind()를 호출하고 싶으면 true를 선택적으로 return할 수 있다.
+- 또한 service가 started인 상태에서 binding을 받는다면 system이 onUnbind() method를 호출할 때 선택적으로 true를 return할 수 있다.
+  - 다음에 client가 service에 bind뙬 때 onRebind()가 호출되기를 원한다면 onUnbind()에서 true를 return하도록 한다.
   - onRebind()는 void를 return하지만 client는 여전히 onServiceConnected() callback에서 IBinder를 받는다.
 
 
