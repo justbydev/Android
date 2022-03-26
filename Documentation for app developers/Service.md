@@ -771,6 +771,64 @@ class ActivityMessenger : Activity() {
   - service와의 interact가 끝나자마자 client를 unbind시키는 것이 좋다.
     - 이렇게 하면 idle service를 끝낼 수 있다.
 
+```kotlin
+var mService: LocalService
+
+val mConnection = object : ServiceConnection {
+    // Called when the connection with the service is established
+    override fun onServiceConnected(className: ComponentName, service: IBinder) {
+        // Because we have bound to an explicit
+        // service that is running in our own process, we can
+        // cast its IBinder to a concrete class and directly access it.
+        val binder = service as LocalService.LocalBinder
+        mService = binder.getService()
+        mBound = true
+    }
+
+    // Called when the connection with the service disconnects unexpectedly
+    override fun onServiceDisconnected(className: ComponentName) {
+        Log.e(TAG, "onServiceDisconnected")
+        mBound = false
+    }
+}
+```
+```kotlin
+Intent(this, LocalService::class.java).also { intent ->
+    bindService(intent, connection, Context.BIND_AUTO_CREATE)
+}
+```
+- bindService()의 첫번째 parameter는 bind할 service를 명시적으로 지정한 intent
+- 두번째 parameter는 ServiceConnection object
+- 세번째 parameter는 binding을 위한 flag
+  - service가 아직 활성화되지 않은 경우 service를 create하기 위해 보통 BIND_AUTO_CREATE를 사용해야 한다.
+  - BIND_AUTO_CREATE는 binding이 존재하는 한 service를 자동으로 생성한다.
+  - BIND_DEBUG_UNBIND는 unbind할 때 mismatched call에 대해 debugging help를 포함시킨다.
+  - BIND_NOT_FOREGROUND는 binding할 때 target service의 process를 foreground scheduling prioirty로 올리지 않는다.
+  - 0 for none
+
+#### Additional notes
+- connection이 끊어지면 발생하는 DeadObjectException 예외를 trap해야 한다.
+  - 이 exception은 remote method에 의해 유일하게 발생하는 exception이다.
+- objects는 여러 process에 걸쳐 count되는 reference다.
+- client의 lifecycle에 맞게 binding과 unbinding을 matching시킨다.
+  - 만약 activity가 visible할 때만 service와 interact해야 한다면 onStart()에서 bind하고 onStop()에서 unbind한다.
+  - 만약 activity가 background에서 stop되었어도 필요하다면 onCreate()에서 bind하고 onDestroy()에서 unbind한다.
+    - 이는 entire time 동안 activity가 service를 사용해야 한다는 것을 뜻한다.
+    - 따라서 만약 servicd가 다른 process에 있다면 process가 무거워지며 system이 service를 중단시킬 가능성이 높아진다.
+  - onResume(), onPause()는 모든 lifecycle transition에서 발생하기 때문에 사용하지 않는다.
+  - 만약 여러 activities가 같은 service에 bind되어 있을 때 두 activity간의 전환이 일어난다면 다음 activity가 resume될 때 bind되기 전에 현재 activity가 pause 될 때 unbind되면서 service가 destroy되고 recreate될 것이다.
+
+### [Managing the lifecycle of a bound service]
+
+
+
+
+
+
+
+
+
+
 
 
 
