@@ -437,8 +437,43 @@ Service.startForeground(notification, FOREGROUND_SERVICE_TYPE_LOCATION)
 </manifest>
 ```
 - 만약 foreground service가 device의 location, camera, microphone에 접근해야 한다면 위와 같이 AndroidManifest file에 정의한다.
+```kotlin
+val notification: Notification = ...;
+Service.startForeground(notification,
+        FOREGROUND_SERVICE_TYPE_LOCATION or FOREGROUND_SERVICE_TYPE_CAMERA)
+```
+- 위 example과 마찬가지로 runtime 때 foreground service가 manifest에 정의했던 type 중 일부만 access가 필요하다면 위와 같이 service의 access를 제한할 수 있다.
 
+#### Add foreground service types of Work Manager workers
+- app이 Work Manager를 사용하고 location, camera, microphone access를 필요로 하는 long-running worker를 사용한다면 앞서 나왔던 API level 별 location, camera, microphone foreground service type 지정 과정을 따르고 이러한 foreground service type을 worker에 사용할 수 있다.
+  - FOREGROUND_SERVICE_TYPE_LOCATION, FOREGROUND_SERVICE_TYPE_CAMERA, FOREGROUND_SERVICE_TYPE_MICROPHONE
 
+### [Restricted access to location, camera, and microphone]
+- user privacy를 위해 Android 11(API level 30)부터 foreground service가 device의 location, camera, microphone에 접근할 때 limitation이 생겼다.
+  - app이 background에서 실행되고 있을 때 foreground service를 시작할 때 다음과 같은 limitation이 있다.
+    - ACCESS_BACKGROUND_LOCATION permission을 받았어도 foreground service는 location에 접근할 수 없다.
+    - foreground service는 microphone, camera에 접근할 수 없다.
+
+#### Exemptions from the restrictions
+- limitation이 있다고 했지만 몇몇 상황에서는 background에서 foreground service를 시작했어도 app이 foreground에서 실행중일 때 location, camera, microphone information에 접근할 수 있다.
+  - 같은 상황에서 foreground service type을 location으로 하고 ACCESS_BACKGROUND_LOCATION permission을 가졌다면 service는 app이 background에서 실행할 때도 location information을 항상 접근할 수 있다.
+
+- 다음이 위에서 허용된 상황이다.
+  - system component에 의해 시작된 service
+  - app widget과 interact하여 시작된 service
+  - notification과 interact하여 시작된 service
+  - 다른, visible app에서 보낸 PendingIntent에 의해 시작된 service
+  - device owner mode에서 실행중인 device policy controller를 실행하는 app에서 시작된 service
+  - VoiceInteractionService를 제공하는 app에서 시작된 service
+  - START_ACTIVITIES_FROM_BACKGROUND privileged permission를 가진 app에서 시작된 service
+
+#### Determine which services are affected in your app
+- app을 test할 때 foreground service를 시작해라.
+  - 만약 started service가 location, microphone, camera 접근에 대한 제한이 있다면 다음의 message가 Logcat에 나타난다.
+```
+Foreground service started from background can not have \
+location/camera/microphone access: service SERVICE_NAME
+```
 
 
 
