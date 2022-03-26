@@ -819,9 +819,14 @@ Intent(this, LocalService::class.java).also { intent ->
   - 만약 여러 activities가 같은 service에 bind되어 있을 때 두 activity간의 전환이 일어난다면 다음 activity가 resume될 때 bind되기 전에 현재 activity가 pause 될 때 unbind되면서 service가 destroy되고 recreate될 것이다.
 
 ### [Managing the lifecycle of a bound service]
+<img width="553" alt="스크린샷 2022-03-26 오후 6 04 32" src="https://user-images.githubusercontent.com/17876424/160232616-c2ac734a-f503-469e-860b-adfa360894c7.png">
 
-
-
+- 모든 client로부터 unbound되면 startService()로 service를 시작하지 않았다면 Android system은 그 service를 destroy한다.
+  - 따라서 purely a bound service라면 client에 binding되었는지 여부에 따라 Android system이 대신 관리해 주기 때문에 service의 lifecycle을 관리하지 않아도 된다.
+- 하지만 onStartCommand() callback method를 implement한다면 이 service는 started service로 고려하기 때문에 반드시 명시적으로 service를 stop해야 한다.
+  - 이런 경우 다른 client가 bound되어 있는지의 여부와 상관없이 스스로 stopSelf()하거나 다른 component가 stopService()를 호출하여 service를 stop할 때까지 run한다.
+- 또한 만약 service가 started되고 binding 한다면 system에서 onUnbind() method를 호출하면 다음에 client가 service에 binding될 때 onRebind()를 호출하고 싶으면 true를 선택적으로 return할 수 있다.
+  - onRebind()는 void를 return하지만 client는 여전히 onServiceConnected() callback에서 IBinder를 받는다.
 
 
 
