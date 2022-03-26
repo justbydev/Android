@@ -476,6 +476,303 @@ location/camera/microphone access: service SERVICE_NAME
 ```
 
 
+## Bound services overview
+- bound service는 client-server interface에서 server다.
+- component가 service에 bind되도록 하며 request를 전송하고 response를 받고 interprocess communication(IPC)를 수행한다.
+- 일반적으로 bound service는 another application component를 제공하는 동안에만 유지되며 background에서 무한히 실행되지 않는다.
+
+### [The basics]
+- bound service는 다른 application이 bind되어 service와 interact할 수 있도록 한다.
+- onBind() callback method를 반드시 implement해야 하며 이는 client가 service와 interact할 수 있게 하는 IBinder object를 return한다.
+
+#### Binding to a started service
+- startService()를 통해 무한히 실행되도록 service를 시작하고 bindService()를 통해 client가 그 service에 bind되도록 할 수 있다.
+- 만약 service가 started되고 bound되었다면 모든 client가 unbind되어도 system이 service를 destroy하지 않는다.
+  - 대신 stopSelf() or stopService()로 직접 stop해야 한다.
+- 보통 onBind(), onStartCommand() 중 하나를 구현하지만 둘 다 구현해야 하는 경우도 있다.
+  - 예를 들면 music player의 경우 service로 무한히 실행되도록 하고 binding을 제공하는 경우다.
+  - activity가 music을 play할 service를 시작하고 application을 떠나도 music이 계속 play되도록 한다.
+  - 이후 application으로 다시 돌아가면 activity가 service에 bind되어 다시 playback을 control할 수 있도록 한다.
+
+- bindService()를 통해 client가 service에 bind된다.
+  - 이때 반드시 service와의 connection을 monitor할 ServiceConnection을 제공해야 한다.
+  - bindService()의 return value는 requested service가 존재하고 client가 그 service에 접근할 수 있는지의 여부를 나타낸다.
+- Android system이 client와 service 사이의 connection을 create할 때 ServiceConnection의 onServiceConnected()를 호출한다.
+  - onServiceConnected() method는 IBinder argument를 포함한다.
+
+- 하나의 service에 동시에 여러 client가 conenct될 수 있다.
+  - 하지만 system은 IBinder service communication channel을 cache한다.
+  - 이 말은 system은 IBinder를 generate하는 onBind() method를 가장 처음 client가 bind될 때에만 호출된다는 뜻이다.
+  - 추가적인 client가 bind되면 system은 onBind()를 다시 호출하지 않고 같은 IBinder를 전달한다.
+- 마지막 client가 service로부터 unbind되면 startService()로 시작하지 않았다면 system은 service를 destroy한다.
+- bound service 실행에서 가장 중요한 부분은 onBind() callback method가 return하는 IBinder interface이다.
+
+### [Creating a bound service]
+- service가 binding을 제공하기 위해서 client가 service와 interact할 수 있도록 하는 programming interface IBinder를 반드시 제공해야 한다.
+- 다음은 interface를 제공하는 3가지 방법이다.
+- Extending the Binder class
+  - 만약 service가 own application에서만 사용가능하고 client와 same process에서 실행하면 Binder class를 extend한 interface를 만들고 onBind()에서 그 instance를 return해야 한다.
+  - client는 Binder를 받아서 Binder implementation or the Service의 public method에 직접 접근해서 사용할 수 있다.
+- Using a Messenger
+  - 만약 서로 다른 process끼리 소통할 interface가 필요하다면 Messenger를 사용한 interface를 create한다.
+  - service는 Message object에 응답하는 Handler를 정의한다.
+  - 이 Handler는 client와 IBinder를 공유할 수 있는 Messenger의 기반으로 client가 Message object를 통해 service에게 command를 보낸다.
+  - 게다가 client는 독자적인 Messenger를 정의할 수 있기 때문에 service는 message를 send back할 수 있다.
+  - Messenger가 single thread에 모든 request를 queue해서 별도로 thread-safe하게 service를 만들 필요가 없기 때문에 interprocess communication(IPC)를 수행하기에 가장 간단한 방법이다.
+- Using AIDL
+  - Android Interface Definition Language(AIDL)은 object를 operating system이 이해할 수 있는 primitive로 분해하여 process 전반에 걸쳐 분류하여 IPC를 실행한다.
+  - 앞서 나왔던 Messenger는 그 기반이 AIDL로 되어 있다.
+  - Messenger의 경우 single thread에서 모든 client request를 queue하기에 service는 한번에 하나의 request를 받는다.
+    - 하지만 만약 동시에 여러 request를 다루고 싶다면 AIDL를 직접 사용할 수 있다.
+    - 이런 경우 service는 반드시 thread-safe하고 multi-threading이 가능해야 한다.
+  - AIDL를 직접 사용하기 위해서는 .aidl file를 생성해야 한다.
+    - Android SDK는 이 file을 사용하여 interface를 구현하고 IPC를 처리하는 abstract class를 생성한다.
+    - 이 class는 service 내에서 확장할 수 있다.
+  - 하지만 이런 방법은 multithreading 기능을 필요로 하고 더 복잡한 실행을 초래할 수 있기 때문에 대부분의 application에서 사용하면 안된다.
+
+#### Extending the Binder class
+- service가 오직 local application에서만 사용하고 다른 process와의 작업이 필요없다면 Binder class를 실행하면 된다.
+- 다음과 같은 순서로 설정한다.
+1. service에서 다음 작업 중 하나를 수행하는 Binder instance를 생성한다.
+  - client가 호출할 수 있도록 public method를 포함
+  - client가 service의 public method를 호출할 수 있는 Service instance를 return
+  - client가 호출할 수 있는 public method를 사용하여 service에서 hosting하는 다른 class의 instance를 return 
+
+2. onBind() callback method에서 Binder instance return
+3. client에서 onServiceConnected() callback method로부터 Binder를 받아서 제공된 method를 사용하여 bound service를 호출
+
+```kotlin
+class LocalService : Service() {
+    // Binder given to clients
+    private val binder = LocalBinder()
+
+    // Random number generator
+    private val mGenerator = Random()
+
+    /** method for clients  */
+    val randomNumber: Int
+        get() = mGenerator.nextInt(100)
+
+    /**
+     * Class used for the client Binder.  Because we know this service always
+     * runs in the same process as its clients, we don't need to deal with IPC.
+     */
+    inner class LocalBinder : Binder() {
+        // Return this instance of LocalService so clients can call public methods
+        fun getService(): LocalService = this@LocalService
+    }
+
+    override fun onBind(intent: Intent): IBinder {
+        return binder
+    }
+}
+```
+- LocalBinder가 getService() method를 제공하여 client가 현재 LocalService instance를 받는다.
+  - 이는 client가 service의 public method를 호출할 수 있도록 한다.
+```kotlin
+class BindingActivity : Activity() {
+    private lateinit var mService: LocalService
+    private var mBound: Boolean = false
+
+    /** Defines callbacks for service binding, passed to bindService()  */
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            val binder = service as LocalService.LocalBinder
+            mService = binder.getService()
+            mBound = true
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            mBound = false
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.main)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Bind to LocalService
+        Intent(this, LocalService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+        mBound = false
+    }
+
+    /** Called when a button is clicked (the button in the layout file attaches to
+     * this method with the android:onClick attribute)  */
+    fun onButtonClick(v: View) {
+        if (mBound) {
+            // Call a method from the LocalService.
+            // However, if this call were something that might hang, then this request should
+            // occur in a separate thread to avoid slowing down the activity performance.
+            val num: Int = mService.randomNumber
+            Toast.makeText(this, "number: $num", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+```
+- client가 service에 bind되기 위해 ServiceConnection을 실행하고 onServiceConnected() callback을 통해 IBinder를 받는다.
+
+#### Using a Messenger
+- 만약 service가 remote process와 통신해야 한다면 Messenger를 사용하여 interface를 제공할 수 있다.
+  - 이는 AIDL 사용 없이 interprocess communication(IPC)를 수행할 수 있게 한다.
+- Messenger는 AIDL을 사용하는 것보다 간단하다.
+  - Messenger는 service에 오는 모든 call을 queue한다.
+  - pure AIDL은 service에게 simultaneous request를 이를 받은 service는 multi-threading을 처리해야 한다.
+- 다음은 Messenger를 사용하는 과정이다.
+1. service는 client로부터의 call에 대한 callback을 받기 위해 Handler를 implment한다.
+2. service는 Handler를 사용하여 Messenger object를 생성한다.
+3. Messenger는 IBinder를 생성하고 이를 client가 받도록 onBinder()에서 return한다.
+4. client는 IBinder를 사용하여 service의 Handler를 참조할 Messenger를 인스턴스화한다.
+   - 이는 client가 service에게 Message object 보낼 때 사용한다.
+5. service는 Handler의 handleMessage()를 통해 각 Message를 받는다.
+
+```kotlin
+/** Command to the service to display a message  */
+private const val MSG_SAY_HELLO = 1
+
+class MessengerService : Service() {
+
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
+    private lateinit var mMessenger: Messenger
+
+    /**
+     * Handler of incoming messages from clients.
+     */
+    internal class IncomingHandler(
+            context: Context,
+            private val applicationContext: Context = context.applicationContext
+    ) : Handler() {
+        override fun handleMessage(msg: Message) {
+            when (msg.what) {
+                MSG_SAY_HELLO ->
+                    Toast.makeText(applicationContext, "hello!", Toast.LENGTH_SHORT).show()
+                else -> super.handleMessage(msg)
+            }
+        }
+    }
+
+    /**
+     * When binding to the service, we return an interface to our messenger
+     * for sending messages to the service.
+     */
+    override fun onBind(intent: Intent): IBinder? {
+        Toast.makeText(applicationContext, "binding", Toast.LENGTH_SHORT).show()
+        mMessenger = Messenger(IncomingHandler(this))
+        return mMessenger.binder
+    }
+}
+```
+- Handler의 handleMessage()를 통해 service로 들어오는 Message를 받고 what member로 무엇을 할지 결정한다.
+
+```kotlin
+class ActivityMessenger : Activity() {
+    /** Messenger for communicating with the service.  */
+    private var mService: Messenger? = null
+
+    /** Flag indicating whether we have called bind on the service.  */
+    private var bound: Boolean = false
+
+    /**
+     * Class for interacting with the main interface of the service.
+     */
+    private val mConnection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // This is called when the connection with the service has been
+            // established, giving us the object we can use to
+            // interact with the service.  We are communicating with the
+            // service using a Messenger, so here we get a client-side
+            // representation of that from the raw IBinder object.
+            mService = Messenger(service)
+            bound = true
+        }
+
+        override fun onServiceDisconnected(className: ComponentName) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mService = null
+            bound = false
+        }
+    }
+
+    fun sayHello(v: View) {
+        if (!bound) return
+        // Create and send a message to the service, using a supported 'what' value
+        val msg: Message = Message.obtain(null, MSG_SAY_HELLO, 0, 0)
+        try {
+            mService?.send(msg)
+        } catch (e: RemoteException) {
+            e.printStackTrace()
+        }
+
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.main)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Bind to the service
+        Intent(this, MessengerService::class.java).also { intent ->
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Unbind from the service
+        if (bound) {
+            unbindService(mConnection)
+            bound = false
+        }
+    }
+}
+```
+- client에서는 service로부터 받은 IBinder를 기반으로 Messenger를 생성하고 send()를 사용하여 message를 보낸다.
+- 만약 service가 client가 보낸 message에 대해 응답하는 것을 원한다면 client에서도 Messenger를 생성한다.
+  - client가 onServiceConnected() callback을 받을 때 send() method를 사용하여 replyTo parameter가 있는 Messenger를 포함하는 Message를 service에게 보낸다.
+
+### [Binding to a service]
+- client 역할을 하는 application component는 bindService()를 통해 service에 bind된다.
+  - Android system은 service의 onBind() method를 호출하고 service와의 interact를 위해 IBinder를 return한다.
+- binding은 비동기이며 bindService()는 client에게 IBinder를 return 없이 바로 return된다.
+- IBinder를 받기 위해 client는 반드시 ServiceConnection instance를 만들고 bindService()에 전달해야 한다.
+  - ServiceConnection은 IBinder를 전달하는 callback method를 포함한다.
+- client로부터 service를 bind하기 위해 다음의 과정을 거친다.
+1. implement ServiceConnection 
+  - onServiceConnected(), onServiceDisconnected() 두 개의 callback method를 override해야 한다.
+  - onServiceConnected()
+    - system은 onBind() method에서 return되는 IBinder를 전달하기 위해 이 method를 호출한다.
+  - onServiceDisconnected()
+    - service가 crash되거나 kill되는 것과 같이 예상치 못하게 service과의 connection을 잃어버린 경우 Android system은 이 method를 호출한다.
+    - 이 method는 client가 unbind될 때 호출되지 않는다.
+2. bindService()를 호출하고 ServiceConnection implementation을 전달한다.
+  - 만약 bindService()가 false를 return 하면 client는 service와의 valid connection를 갖고 있지 않다는 것이다.
+  - 하지만 이런 상황에서도 client는 반드시 unbindService()를 호출해야 한다.
+    - 그렇지 않으면 client가 idle 상태인 service를 종료하지 못하게 한다.
+3. system이 onServiceConnected()를 호출할 때 client가 service를 호출할 수 있고 interface에 정의된 method를 사용할 수 있다.
+4. service와 disconnect하려면 unbindService()를 호출한다.
+  - 만약 app이 client를 destroy시킬 때 service에게 아직 bound되어 있다면 이 destruction에 인해 client가 unbind된다.
+  - service와의 interact가 끝나자마자 client를 unbind시키는 것이 좋다.
+    - 이렇게 하면 idle service를 끝낼 수 있다.
+
+
+
 
 ## Q&A
 <b id="f1">1) </b> background service restrictions의 예외 사항이 있을까? [↩](#r1)<br>
