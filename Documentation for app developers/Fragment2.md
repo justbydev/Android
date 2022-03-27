@@ -830,6 +830,7 @@ class MyTestSuite {
   - 그렇기 때문에 그 이전에 fragmentmanager strictmode를 설정해야 한다.
 
 <b id="fd">d) </b> allowViolation과 StrictMode violation을 contain한 third-party library[↩](#rd)<br>
+- https://androidx.tech/artifacts/fragment/fragment/1.4.0-rc01-source/androidx/fragment/app/strictmode/FragmentStrictMode.kt.html
 - allowViolation()의 역할
   - Allow the specified [Fragment] class to bypass penalties for the specified * [Violation], if detected.
   - 즉, 지정한 Fragment는 해당 Violation을 허용하는 것
