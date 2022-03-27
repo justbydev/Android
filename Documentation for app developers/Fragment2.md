@@ -1,4 +1,4 @@
-# Fragments
+# Fragments(Saving state, Communication with fragments, DailogFragment, Debug, Test)
 ## Saving state with fragments
 - 다양한 Android system operations는 fragment state에 영향을 준다.
 - user state가 save되는 것이 보장되려면 Android framework는 fragment와 back stack을 자동으로 save하고 restore해야 한다.
@@ -303,7 +303,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 }
 ```
 - child fragment에서는 FragmentManager를 통해 result를 set한다.
-- parent는 fragment가 STARTED일 때 result를 받는다.
+- parent는 fragment가 STARTED가 되면 result를 받는다.
 ```kotlin
 button.setOnClickListener {
     val result = "result"
@@ -367,30 +367,35 @@ PurchaseConfirmationDialogFragment().show(
 - 만약, fragment안에서 DialogFragment를 create하면 Fragment의 child FragmentManager를 사용해야 한다.<sup id="r2">[2)](#f2)</sup>
   - configuration change 이후 state가 제대로 restore되기 위해서
 - non-null tag를 사용하면 findFragmentByTag()를 통해 DialogFragment를 받을 수 있다.
-- DialogFragment는 configuration change 이후 자동으로 restore되기 때문에 오직 user action에 의해 show()를 호출하거나 findFragmentByTag()가 null일 때 dialog가 더 이상 존재하지 않는다는 것만 신경쓰면 된다.
+- DialogFragment는 configuration change 이후 자동으로 restore되기 때문에 user action에 의해 dialog를 호출하 때 show() 호출만을 고려하거나 findFragmentByTag()가 null을 return한다면 dialog가 더 이상 존재하지 않는다는 것만 신경쓰면 된다.
 
 ### [DialogFragment lifecycle]
-- onCreateDialog()
-  - fragment가 관리하고 display할 수 있도록 Dialog를 제공하는 callback
-- onDismiss()
-  - Dialog가 dismiss될 때 custom logic을 수행해야 할 때 사용하는 callback
-  - resource release, observable resource unsubscribe 등의 custom logic
-- onCancle()
-  - Dialog가 cancel될 때 custom logic을 수행해야 할 때 사용하는 callback
-- dismiss()<sup id="rb">[b)](#fb)</sup>
-  - fragment와 그 dialog를 dismiss한다.
-  - 만약 fragment가 back stack에 add되었다면 이 entry를 포함하여 그 위의 모든 back stack state가 pop된다.
-  - 아니라면 fragment를 remove하기 위한 new transaction이 commit된다.
-- setCancellable()
-  - 나타난 Dialog가 cancelable한지 control한다.
-  - Dialog.setCancelable(boolean)을 직접 호출하는 대신 사용해야 한다.
+- DialogFragment는 a few additional lifecycle callbacks를 갖고 있다.
+
+
+
+  - onCreateDialog()
+    - fragment가 관리하고 display할 수 있도록 Dialog를 제공하는 callback
+  - onDismiss()
+    - Dialog가 dismiss될 때 custom logic을 수행해야 할 때 사용하는 callback
+    - resource release, observable resource unsubscribe 등의 custom logic
+  - onCancle()
+    - Dialog가 cancel될 때 custom logic을 수행해야 할 때 사용하는 callback
+- 또한 DialogFragment는 dismiss나 cancellability를 설정할 수 있는 method를 갖고 있다.
+  - dismiss()<sup id="rb">[b)](#fb)</sup>
+    - fragment와 그 dialog를 dismiss한다.
+    - 만약 fragment가 back stack에 add되었다면 이 entry를 포함하여 그 위의 모든 back stack state가 pop된다.
+    - 아니라면 fragment를 remove하기 위한 new transaction이 commit된다.
+  - setCancellable()
+    - 나타난 Dialog가 cancelable한지 control한다.
+    - Dialog.setCancelable(boolean)을 직접 호출하는 대신 사용해야 한다.
 - DialogFragment를 Dialog와 함께 사용할 때 onCreateView() 또는 onViewCreated()를 override하지 않는다.<sup id="r3">[3)](#f3)</sup>
-  - Dailogs는 view일 뿐 아니라 자체 window를 갖고 있다.
-  - 따라서 onCreateView()를 override하기에는 충분하지 않다.
+  - Dialogs are not only views—they have their own window
+    - 따라서 onCreateView()를 override하기에 insufficient하다.
   - onCreateView()를 override하고 non-null view를 제공하지 않는 한 custom DialogFragment에서 onViewCreated()는 호출되지 않는다.
 
 ### [Using custom views]
-- DialogFragment를 create하고 dialog를 display하려면 onCreateView()를 override한다.
+- onCreateView()를 override해서 DialogFragment를 create하고 dialog를 display할 수 있다.
   - 일반 fragment와 마찬가지로 onCreateView에게 layoutId을 지정한다.
   - 혹은 Fragment 1.3.0-alpha02에 도입된 DialogFragment construstor를 사용한다.
   ```kotlin
@@ -424,7 +429,7 @@ adb shell setprop log.tag.FragmentManager VERBOSE
 - log 항목은 다음 정보로 구성된다.
   - Fragment instance의 간단한 class name
   - Fragment instance의 ID hash code
-  - Fragment instance의 FragmentManager unique ID. configuration change 및 process death, recreation에 있어 안정적이다.
+  - Fragment instance의 FragmentManager unique ID. configuration change 및 process death, recreation에 있어 stable하다.
   - Fragment가 add된 container ID(단, setting되었다면)
   - Fragment tag(단, setting되었다면)
 ```
@@ -547,7 +552,7 @@ class ExampleActivity : AppCompatActivity() {
 - 특정 violation을 선택적으로 허용할 수도 있다.
   - 하지만 위 예에서는 이 policy는 다른 모든 fragment type에 대해 violation을 강제한다.
   - 이는 third-party library component가 StrictMode violations을 포함할 때 유용하다.
-    - 이런 경우 library에서 violation을 수정할 때까지 소유하지 않은 component의 Strict 허용 목록에 이 violation을 일시적으로 추가할 수 있다.
+    - 이런 경우 library에서 violation을 수정할 때까지, third-party component의 StrictMode 허용 목록에 이 violation을 일시적으로 추가할 수 있다.<sup id="rd">[d)](#fd)</sup>
 - 다음은 3가지 penalty type이다.
   - penaltyLog()는 violation 세부정보를 LogCat에 dump한다.
   - penaltyDeath()는 violation을 감지하면 앱을 종료한다.
@@ -556,7 +561,7 @@ class ExampleActivity : AppCompatActivity() {
   - 명시하지 않으면 기본값 penaltyLog()가 적용된다.
   - penaltyLog() 이외의 penalty를 적용하는 경우 penaltyLog()를 명시적으로 설정하지 않으면 penaltyLog() 사용이 중지된다.
 - penaltyListener()는 violation을 logging할 third-party logging library가 있으면 유용하다.
-- 또는, release builds에서 non-critical violation catching을 설정하고 crash reporting library에 logging하는 것이 좋다.
+- 또는, release builds에서 non-critical violation catching을 설정하고 crash reporting library에 logging할 수도 있다.
 
 ```kotlin
 class MyApplication : Application() {
@@ -609,7 +614,7 @@ class MyApplication : Application() {
 - user visible hint violation은 detectSetUserVisibleHint()를 사용할 수 있고 SetUserVisibleHintViolation를 던진다.
 - 이는 deprecated된 setUserVisibleHint()가 call될 때를 나타낸다.
   - 만약 이 method를 call하려면 대신 setMaxLifecycle()를 call해야 한다.
-- 만약 setMaxLifecycle()을 override했다면<sup id="rd">[d)](#fd)</sup>
+- 만약 setMaxLifecycle()을 override했다면<sup id="re">[e)](#fe)</sup>
   - 만약 setUserVisibleHint()가 true면 behavior를 onResume()으로 옮겨야 한다.
   - 만약 setUserVisibleHint()를 false면 behavior를 onPause()으로 옮겨야 한다.
 
@@ -691,7 +696,7 @@ class MyTestSuite {
 - app의 UI test를 할 때는 RESUMED state에서 해도 충분하지만 lifecycle state이 다른 state으로 transition되는 동작에 대해서 평가를 해야 할수도 있다.
   - initialState argument를 모든 launchFragment*() method에 전달하여 초기 상태를 지정할 수 있다.
 - fragment를 다른 lifecycle state으로 이동시키려면 moveToState()를 호출한다.
-  - CREATED, STARTED, RESUMED, DESTORYED argument를 지원하며 fragment를 contain하는 fragment or activity라 해당 state으로 변하는 상황을 simulate한다.
+  - CREATED, STARTED, RESUMED, DESTORYED argument를 지원하며 fragment를 contain하는 fragment or activity가 해당 state으로 변하는 상황을 simulate한다.
 ```kotlin
 @RunWith(AndroidJUnit4::class)
 class MyTestSuite {
@@ -824,8 +829,15 @@ class MyTestSuite {
 - process recreate 될 때 super.onCreate(SavedInstanceState)를 통해 fragmentmanager가 fragment를 restore
   - 그렇기 때문에 그 이전에 fragmentmanager strictmode를 설정해야 한다.
 
-<b id="fd">d) </b> setUserVisibleHint와 setMaxLifecycle[↩](#rd)<br>
+<b id="fd">d) </b> allowViolation과 StrictMode violation을 contain한 third-party library[↩](#rd)<br>
+- allowViolation()의 역할
+  - Allow the specified [Fragment] class to bypass penalties for the specified * [Violation], if detected.
+  - 즉, 지정한 Fragment는 해당 Violation을 허용하는 것
+- 그래서 위와 같은 기능을 사용하면 StrictMode violation을 contain한 third-party library에서 violation을 고치기 전까지 해당 violtion에 대해 allow list에 임시적으로 추가하여 사용할 수 있다.
+
+<b id="fe">e) </b> setUserVisibleHint와 setMaxLifecycle[↩](#re)<br>
 - setUserVisibleHint(true) 대신 setMaxLifecycle(fragment, Lifecycle.State.RESUMED) 사용
   - onResume()은 visible fragment일 때만 호출
 - setuserVisibleHint(false) 대신 setMaxLifecycle(fragment, Lifecycle.State.STARTED) 사용
+
 
