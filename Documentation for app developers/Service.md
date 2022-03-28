@@ -811,7 +811,7 @@ Intent(this, LocalService::class.java).also { intent ->
 #### Additional notes
 - connection이 끊어지면 발생하는 DeadObjectException 예외를 trap해야 한다.
   - 이 exception은 remote method에 의해 유일하게 발생하는 exception이다.
-- objects는 여러 process에 걸쳐 count되는 reference다.
+- objects는 여러 process에 걸친 reference counted다.
 - client의 lifecycle에 맞게 binding과 unbinding을 matching시킨다.
   - 만약 activity가 visible할 때만 service와 interact해야 한다면 onStart()에서 bind하고 onStop()에서 unbind한다.
   - 만약 activity가 background에서 stop되었어도 필요하다면 onCreate()에서 bind하고 onDestroy()에서 unbind한다.
