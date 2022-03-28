@@ -41,7 +41,7 @@
 - user가 application과 interact하는 동안 main thread 밖에서 작업을 수행해야 하는 경우 new thread를 create해야 한다.
   - 예를 들어 activity가 running하는 동안에만 음악 재생을 원한다면 onCreate()에서 thread를 생성해서 onStart()에서 thread를 running하고 onStop()에서 stop해야 한다.
     - 전통적인 Thread 대신 thread pool이나 java.util.concurrent package의 executors를 사용하거나 Kotlin coroutines을 사용할 수도 있다.
-- service를 사용한다면 기본적으로 main thread에서 실행하는 것이므로 intensive or blocking operation을 수행해야 한다면 new thread를 생성해야 한다.<sup id="r2">[2)](#f2)</sup>
+- service를 사용한다면 기본적으로 main thread에서 실행하는 것이므로 intensive or blocking operation을 수행해야 한다면 service내에서 new thread를 생성해야 한다.
 
 ### [The basics]
 - service를 create하기 위해 Service subclass를 생성하거나 기존 subclass를 사용해야 한다.
@@ -841,7 +841,6 @@ Intent(this, LocalService::class.java).also { intent ->
 ## Q&A
 <b id="f1">1) </b> background service restrictions의 예외 사항이 있을까? [↩](#r1)<br>
 
-<b id="f2">2) </b> worker thread를 만들었는데 그 속에서 service를 수행할 필요가 있을까? [↩](#r2)<br>
 
 
 
