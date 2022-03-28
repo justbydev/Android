@@ -220,7 +220,7 @@ Intent(this, HelloService::class.java).also { intent ->
 
 ### [Creating a bound service]
 - bound service는 long-standing connection을 위해 bindService()를 호출하여 application components가 service에 bind되도록 한다.
-  - 일반적으로 startService()를 통해 start하는 것을 허용하지 않는다.
+  - 일반적으로 startService()를 통해 bound service를 start하는 것을 허용하지 않는다.
 
 - 다른 component와 service가 application 내에서 interact하거나 interprocess communication을 통해 다른 application에게 현재 application의 기능을 드러낼 떄 bound service를 생성한다.
 - bound service를 생성하기 위해서 service와의 소통을 위한 interface를 정의하는 IBinder를 return하는 onBind() callback method를 implement 해야 한다.
