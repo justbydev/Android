@@ -321,7 +321,7 @@ class ExampleService : Service() {
   - status bar notification을 보여줘서 app이 foreground에서 어떤 task를 수행하고 있고 system resource를 소모하고 있는지 안다.
   - notification은 service가 stop되거나 foreground에서 제거되지 않으면 dismiss될 수 없다.
 
-- Android 12(API level 31) 이상의 device는 short-running foreground service를 효율적을 이용할 수 있도록 한다.(provide a streamlined experience)
+- Android 12(API level 31) 이상의 device는 short-running foreground service를 효율적으로 이용할 수 있도록 한다.(provide a streamlined experience)
   - 이런 device에서는 system이 foreground service와 관련된 notification을 보여주기 전에 10초를 기다린다.
   - few exceptions은 'services that show a notification immediately'에 설명
 - 이런 foreground service는 다음과 같은 app에서 사용한다.
