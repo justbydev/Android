@@ -52,7 +52,7 @@
     - 이렇게 실행하게 되면 stopSelf() or stopService()를 통해 service를 stop해야 한다.
   - 만약 binding만 원한다면 이 method를 실행할 필요 없다.
 - onBind()
-  - 다른 component가 service와 bind되고 싶을 때 bindSercie()를 호출함으로써 system이 invoke하는 method
+  - 다른 component가 service와 bind되고 싶을 때 bindService()를 호출함으로써 system이 invoke하는 method
   - IBinder를 return해서 service와 client가 소통할 수 있는 interface를 제공해야 한다.
   - 만약 binding를 허용하고 싶지 않다면 null을 return해야 한다.
 - onCreate()
@@ -63,12 +63,12 @@
   - thread, registered listeners, receivers 등 any resource를 clean up할 때 사용해야 한다.
   - 이는 service가 수신하는 마지막 call이다.
 - 만약 component가 startService()를 하여 service를 시작했다면 스스로 stopSelf()를 하거나 다른 component가 stopService()를 할 때까지 service는 지속된다.
-- 만약 bindService()를 하고 onStartCommand()가 호출되지 않았다면 component가 bound되어 있는 한 service는 실행된다.
-  - service에 bound된 모든 clients가 unbound되면 system은 service를 destroy시킨다.
+- 만약 bindService()를 하고 onStartCommand()가 호출되지 않았다면 component가 bound되어 있는 동안에만 service는 실행된다.
+  - service가 모든 client로부터 unbound되면 system은 service를 destroy시킨다.
 - Android system이 service를 강제 중단하는 것은 memory가 부족하여 user focus를 가진 activity를 위해 system resource를 회복해야 하는 경우로만 국한된다.
-  - service가 user focus를 가진 activity에 binding된 경우 종료된 가능성이 적고 foreground에서 실행되는 경우 종료될 가능성이 희박하다.
+  - service가 user focus를 가진 activity에 binding된 경우 종료될 가능성이 적고 foreground에서 실행되는 경우 종료될 가능성이 희박하다.
   - service가 시작되어 장시간 실행 중이라면 시간이 지나면서 background task list에서 그 위치를 낮추고 종료될 가능성이 높아진다.
-    - service가 시작되었다면 system에 의한 restart를 정상적으로 처리하도록 design되어야 한다.
+    - 그렇기에 service가 시작되었다면 system에 의한 restart를 정상적으로 처리하도록 design되어야 한다.
   - system이 service를 중단하는 경우 resource를 다시 사용할 수 있게 되면 가능한 한 빨리 service가 다시 시작된다.
     - 다만 이는 onStartCommand()에서 return되는 값에 따라 다르다.
 
