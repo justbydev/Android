@@ -10,7 +10,7 @@
   - network transactions, play munic, perform file I/O, interact with a content provider
     - 이 모든 것을 background에서 수행할 수 있다.
 - service는 직접 지정하지 않는 한 own thread나 seperate process가 아니라 hosting process의 main thread에서 run한다.
-  - blocking operation을 run하려면 ANR 방지를 위해 seperate thread에서 service를 run해야 한다.
+  - blocking operation을 run하려면 ANR 방지를 위해 service 내에서 seperate thread를 만들고 그 seperate thread에서 blocking operation을 수행해야 한다.
 ### [Types of Services]
 - Foreground
   - foreground service는 user에게 noticable하다.
