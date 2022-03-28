@@ -323,7 +323,7 @@ class ExampleService : Service() {
 
 - Android 12(API level 31) 이상의 device는 short-running foreground service를 효율적으로 이용할 수 있도록 한다.(provide a streamlined experience)
   - 이런 device에서는 system이 foreground service와 관련된 notification을 보여주기 전에 10초를 기다린다.
-  - few exceptions은 'services that show a notification immediately'에 설명
+  - 이에 대한 few exceptions은 'services that show a notification immediately'에 설명
 - 이런 foreground service는 다음과 같은 app에서 사용한다.
   - music player app으로 notification을 통해 현재 재생되고 있는 음악을 보여준다.
   - fitness app으로 user permission을 받은 후 달리기 기록을 저장하고 notification을 통해 user가 움직인 거리를 보여준다.
@@ -336,7 +336,7 @@ class ExampleService : Service() {
   - action button을 포함한 notification과 관련된 service
   - mediaPlayback, mediaProjection, phoneCall foregroundServiceType을 가진 service
   - notification의 category attribute가 phone call, navigation, media playback과 관련된 use case를 제공하는 service
-  - notification 설정 시 setForegroundServiceBehavior()에 FOREGROUND_SERVICE_IMMEDIATE을 전달하여 behavior change을 회피(display of the notification will be immediate even if the default behavior would be to defer visibility for a short time)한 service
+  - notification 설정 시 setForegroundServiceBehavior()에 FOREGROUND_SERVICE_IMMEDIATE을 전달하여 behavior change을 회피(display of the notification will be immediate even if the default behavior would be to defer visibility for a short time, Android 12 이상에서는 notification 보여주기 전에 10초 기다리는 behavior를 회피하도로 설정)한 service
 
 ### [Request the foreground service permission]
 ```Gradle
