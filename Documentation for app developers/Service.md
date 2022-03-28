@@ -210,12 +210,12 @@ Intent(this, HelloService::class.java).also { intent ->
 
 #### Stopping a service
 - started service는 반드시 own lifecycle을 관리해야 한다.
-  - system memory를 회복해야 하고 onStartCommand() return 후에도 계속 실행되는 경우를 제외하고는 system은 servic를 stop하거나 destroy하지 않는다.
+  - onStartCommand() return 후에 system이 system memory를 복구한 후에 service를 계속 실행해야 하는 경우를 제외하고는 system은 service를 stop하거나 destroy하지 않는다. 
   - service는 반드시 stopSelf()를 통해 스스로 멈추거나 다른 component가 stopService()를 호출하여 멈춰야 한다.
 - 만약 onStartCommand()를 통해 동시에 여러 request를 처리해야 하는 경우 start request 처리를 끝낸 뒤에도 service를 중단하면 안된다.
   - service를 중단하게 되면 첫번째 request가 stop하면 두번째 request를 종료시킬 수 있다.
   - 이런 문제를 해결하기 위해 stopSelf(int)를 사용하여 service를 stop하는 request가 항상 가장 최근 start request를 기준으로 하도록 해야 한다.
-  - stopSelf(int)를 호출할 경우 onStartCommand()에 startId를 통해 전달된 start request의 ID를 stop request에 대응시킨다.
+  - 이는 stopSelf(int)를 호출하면 stop request에 대응하는 start request ID(onStartCommand()에 전달된 startId)가 전달된다.
   - 그러면 만약 stopSelf(int)를 호출할 수 있게 되기 전에 service가 new start request를 받게 되면 ID가 일치하지 않으므로 service는 중단되지 않는다. 
 
 ### [Creating a bound service]
