@@ -85,7 +85,8 @@
 - 모든 service는 manifest file에 선언해야 한다.
 - < service > element에는 service를 시작할 때 필요한 permission과 어떤 process에서 실행해야 하는지를 정의하는 attribute를 포함할 수 있다.
   - android:name attribute만이 required attribute다.
-  - application publish 후 이 name을 그대로 두어야 service가 start or binding할 explicit intent에 대한 종속성 때문에 코드가 깨질 위험을 막을 수 있다.
+  - application publish 후 이 name을 그대로 두어야 한다.
+    - service를 start or bind하기 위해 explicit intent를 사용할 때 이 name에 의존하기에 name을 바꾸면 이 의존성 때문에 code가 깨질 수 있기 때문이다.
 - app의 안전성을 위해 항상 explicit intent를 통해 Service를 시작하고 intent filter를 선언하지 않아야 한다.
   - implicit intent를 사용하면 어떤 service가 그 intent에 반응할 지 모르고 user는 어떤 service가 시작하는지 알 수 없기 때문에 위험하다.
   - API level 21부터 implicit intent로 bindService()를 호출하면 exception이 발생한다.
