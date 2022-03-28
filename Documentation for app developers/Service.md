@@ -91,7 +91,8 @@
   - implicit intent를 사용하면 어떤 service가 그 intent에 반응할 지 모르고 user는 어떤 service가 시작하는지 알 수 없기 때문에 위험하다.
   - API level 21부터 implicit intent로 bindService()를 호출하면 exception이 발생한다.
 - service가 오직 같은 app 내에서만 가능하도록 하려면 android:exported attribute를 false로 설정한다.
-- 만약 사용자가 실수로 service를 stop하는 것을 방지하려면 < service > element에 android:description을 추가하여 이 service가 무엇이며 어떤 benefits을 제공하는지에 대한 short sentence를 제공한다.
+- 사용자는 device에서 어떤 service가 실행되고 있는지 알 수 있고 그들이 인지하지 못하거나 믿지 못하는 service인 경우 service를 stop할 수 있다.
+  - 만약 사용자가 실수로 service를 stop하는 것을 방지하려면 < service > element에 android:description을 추가하여 이 service가 무엇이며 어떤 benefits을 제공하는지에 대한 short sentence를 제공한다.
 
 ### [Creating a started service]
 - started service는 다른 component가 startService()를 호출하여 시작하는 service로 onStartCommand()가 호출된다.
