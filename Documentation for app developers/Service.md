@@ -22,7 +22,7 @@
 - Background
   - background service는 user가 직접적으로 알지 못하는 operation을 수행한다.
     - compact app's storage
-  - 만약 API level 26이상을 target한다면 app이 foreground에 있지 않다면 system은 background service 실행에 restrictions을 가한다.<sup id="r1">[1)](#f1)</sup>
+  - 만약 API level 26이상을 target한다면 app이 foreground에 있지 않다면 system은 background service 실행에 restrictions을 가한다.
 - Bound
   - bindService()를 통해 application component에 bind되는 service
   - bound service는 client-server interface를 제공하여 components가 service와 interact하고 request 전송하고 result를 받을 수 있도록 하며 interprocess communication(IPC)가 가능하도록 한다.
@@ -827,7 +827,7 @@ Intent(this, LocalService::class.java).also { intent ->
   - 따라서 purely a bound service라면 client에 binding되었는지 여부에 따라 Android system이 대신 관리해 주기 때문에 service의 lifecycle을 관리하지 않아도 된다.
 - 하지만 onStartCommand() callback method를 implement한다면 이 service는 started service로 고려하기 때문에 반드시 명시적으로 service를 stop해야 한다.
   - 이런 경우 다른 client가 bound되어 있는지의 여부와 상관없이 스스로 stopSelf()하거나 다른 component가 stopService()를 호출하여 service를 stop할 때까지 run한다.
-- 또한 service가 started인 상태에서 binding을 받는다면 system이 onUnbind() method를 호출할 때 선택적으로 true를 return할 수 있다.
+- 또한 service가 started인 상태에서 binding을 받는다면 system이 onUnbind() method를 호출할 때 선택적으로 true를 return할 수 있다.<sup id="r1">[1)](#f1)</sup>
   - 다음에 client가 service에 bind뙬 때 onRebind()가 호출되기를 원한다면 onUnbind()에서 true를 return하도록 한다.
   - onRebind()는 void를 return하지만 client는 여전히 onServiceConnected() callback에서 IBinder를 받는다.
 
@@ -841,8 +841,17 @@ Intent(this, LocalService::class.java).also { intent ->
 
 
 ## Q&A
-<b id="f1">1) </b> background service restrictions의 예외 사항이 있을까? [↩](#r1)<br>
-
+<b id="f1">1) </b> service bind, unbind, rebind [↩](#r1)<br>
+- 여러 client가 동시에 하나의 service에 bind될 수 있다.
+  - 이렇게 동시에 bind되면 첫번째 client에 대해서만 onBind()가 호출되고 이후에는 첫번째 client에 대해 return된 IBinder를 재활용한다.
+  - onUnbind() 역시 첫번째 client에 대해서만 호출된다.
+  - 만약 bind되었던 client가 전부 unbind되고 바로 다시 다른 client가 bind된 경우에는 onBind(), onUnbind()가 호출된다.
+    - 이는 모든 client가 unbind될 때 system이 service를 종료시키기 때문에 이후 새로운 client를 bind하는 것은 새로운 service를 시작하는 것이기 때문이다.
+- bindService()에 전달하는 flag로 AUTO_CREATE를 사용해야 service를 자동으로 create해준다.
+  - 0을 전달하면 service를 자동으로 create하지 않는다.
+  - 물론, startService()로 started된 service에 대해서는 상관없다.
+- 만약 여러 client가 동시에 하나의 service에 bind 될 때 onUnbind()를 다시 호출하고 싶다면 onUnbind()에 true를 return 해야 한다.
+  - true를 return하면 onRebind()가 호출되고 onUnbind()가 호출된다.
 
 
 
