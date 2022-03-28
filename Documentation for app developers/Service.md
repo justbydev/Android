@@ -179,15 +179,15 @@ class HelloService : Service() {
 - onStartCommand()의 경우 반드시 integer를 return한다.
   - 이 값은 system이 service를 kill한 경우 system이 어떻게 service를 continue할지를 설명하는 값이다.
   - START_NOT_STICKY
-    - system이 service를 kill한 후 deliver할 pending intent가 있지 않다면 recreate하지 않는다.
-    - 이 방법은 필요하지 않거나 application이 unfinished job을 단순하게 restart할 때 안전한 option이다.
+    - onStartCommand() return 후에 system이 service를 kill했다면 deliver할 pending intent가 있지 않다면 service를 recreate하지 않는다.
+    - 이 방법은 service가 필요하지 않거나 application이 완료되지 않은 작업을 단순히 재시작할 때 service를 실행하지 않도록 하는 가장 안전한 option이다.
   - START_STICKY
-    - system이 service를 kill한 후 service를 recreate하고 onStartCommand()를 호출하지만 last intent를 전달하지 않는다.
+    - onStartCommand() return 후에 system이 service를 kill했다면 service를 recreate하고 onStartCommand()를 호출하지만 last intent를 전달하지 않는다.
     - service를 시작하는 pending intent가 없다면 null intent와 함께 onStartCommand()를 호출한다.
       - pending intent가 있으면 그 intent를 deliver한다.
-    - 이는 명령으 실행하지는 않지만 무한히 실행 중이며 작업을 기다리고 있는 media player에 적합하다.
+    - 이는 명령을 실행하지는 않지만 무한히 실행 중이며 작업을 기다리고 있는 media player와 같은 작업에 적합하다.
   - START_REDELIVER_INTENT
-    - system이 service를 kill한 후 service를 recreate하고 service에 전달됐던 last intent와 함께 onStartCommand()를 호출한다.
+    - onStartCommand() return 후에 system이 service를 kill했다면 service를 recreate하고 service에 전달됐던 last intent와 함께 onStartCommand()를 호출한다.
     - 모든 pending intent가 차례로 전달된다.
     - file downloading과 같이 바로 다시 시작해야 하는 job에 적합하다.
 
