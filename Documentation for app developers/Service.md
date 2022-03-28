@@ -389,7 +389,7 @@ startForeground(ONGOING_NOTIFICATION_ID, notification)
   - activity와 같이 사용자가 볼 수 있는 상태에서 전환하는 상황
   - 기존 task의 back stack에 activity가 있는 경우를 제외하고 background에서 activity를 시작할 수 있는 상황
   - Firebase Cloud Messaging을 사용하여 high-priority message을 받는 상황
-  - app과 관련된 UI element에서 작업을 수행하는 상황
+  - app과 관련된 UI element에 대해 작업을 수행하는 상황
     - 예를 들어 bubble, notification, widget, activity과 interact할 수 있다.
   - user가 요구한 action을 complete하기 위한 exact alarm을 invoke한 상황
   - app이 device의 현재 input method로 사용하는 app인 상황
