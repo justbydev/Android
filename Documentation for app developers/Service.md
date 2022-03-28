@@ -630,7 +630,7 @@ class BindingActivity : Activity() {
   - 이는 AIDL 사용 없이 interprocess communication(IPC)를 수행할 수 있게 한다.
 - Messenger는 AIDL을 사용하는 것보다 간단하다.
   - Messenger는 service에 오는 모든 call을 queue한다.
-  - pure AIDL은 service에게 simultaneous request를 이를 받은 service는 multi-threading을 처리해야 한다.
+  - pure AIDL은 service에게 simultaneous request를 전송하고 이를 받은 service는 multi-threading을 처리해야 한다.
 - 다음은 Messenger를 사용하는 과정이다.
 1. service는 client로부터의 call에 대한 callback을 받기 위해 Handler를 implment한다.
 2. service는 Handler를 사용하여 Messenger object를 생성한다.
